@@ -1,11 +1,11 @@
 '''Imap connection class'''
 from email import message_from_bytes
 from time import time
-from imapclient import IMAPClient
+from imapclient import IMAPClient, exceptions
+from imaplib import IMAP4
 from lib.storage import Email
 
 __all__ = ['Imap', 'timer']
-
 
 def timer(func):
     """@timer decorator"""
@@ -30,26 +30,35 @@ class Imap(IMAPClient):
     :param config: AccountConfig Object with correct data
     :param unsafe: Workaround for invalid ssl certificates (unproductive only)
     """
-
     def __init__(self, config, unsafe=False):
         self.config = config
+        self.unsafe = unsafe
         if unsafe:
             import ssl
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            # ssl_context.verify_mode = ssl.CERT_NONE
-        super().__init__(
-            self.config.imap.host,
-            port=self.config.imap.port,
-            ssl_context=ssl_context if unsafe else None,
-            )
+            self.ssl_context = ssl.create_default_context()
+            self.ssl_context.check_hostname = False
+            self.ssl_context.verify_mode = ssl.CERT_NONE
         self.connect()
 
     @timer
     def connect(self):
         """Connect to Imap Server with credentials from self.config.imap"""
-        self.login(self.config.imap.user, self.config.imap.password)
-        self.select_folder(self.config.directory)
+        if not hasattr(self, '_imap'):
+            super().__init__(
+                self.config.imap.host,
+                port=self.config.imap.port,
+                ssl_context=self.ssl_context if self.unsafe else None,
+                )
+        if self.state == 'NONAUTH':
+            self.login(self.config.imap.user, self.config.imap.password)
+        if self.state == 'AUTH':
+            self.select_folder(self.config.directory)
+        if self.state != 'SELECTED':
+            raise exceptions.LoginError('Unable to connect')
+            
+    @property
+    def state(self):
+        return self._imap.state
 
     @property
     def vdirs(self):
@@ -106,19 +115,23 @@ class Imap(IMAPClient):
     # Overwrites for time measuring
     @timer
     def search(self, criteria='ALL', charset=None):
+        self.connect()
         return IMAPClient.search(self, criteria=criteria, charset=charset)
 
     @timer
     def fetch(self, messages, data, modifiers=None):
+        self.connect()
         return IMAPClient.fetch(self, messages, data, modifiers=modifiers)
 
     @timer
     def append(self, folder, msg, flags=(), msg_time=None):
+        self.connect()
         return IMAPClient.append(
             self, folder, msg, flags=flags, msg_time=msg_time)
 
     @timer
     def delete_messages(self, messages, silent=False):
+        self.connect()
         return IMAPClient.delete_messages(self, messages, silent=silent)
 
     @timer
