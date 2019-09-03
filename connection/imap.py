@@ -2,7 +2,7 @@
 from email import message_from_bytes
 from time import time
 from imapclient import IMAPClient
-from storage import Email
+from lib.storage import Email
 
 __all__ = ['Imap', 'timer']
 
@@ -62,6 +62,7 @@ class Imap(IMAPClient):
         for uid, subject in subjects.items():
             subject = message_from_bytes(
                 subject[b'BODY[HEADER.FIELDS (SUBJECT)]'])['Subject']
+            subject = subject.lstrip(f'{self.config.tag} ')
             if subject not in vdirs:
                 vdirs[subject] = [uid]
             else:
@@ -92,8 +93,10 @@ class Imap(IMAPClient):
         self.expunge()
         return uid not in self.uids
 
-    def get_email_obj(self, uids):
+    def get_email_obj(self, uids=None):
         '''one or multiple'''
+        if not uids:
+            uids = self.uids
         if isinstance(uids, int):
             uids = [uids]
         return {uid: Email(self, uid) for uid in uids}
