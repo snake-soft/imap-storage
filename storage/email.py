@@ -68,6 +68,14 @@ class Email:
                     self._files.append(File(name, data, mime))
         return self._files
 
+    def file_by_name(self, name):
+        return [file for file in self.files if file.name == name][0]
+
+    def file_by_id(self, id_):
+        for file in self.body.xml_files:
+            if file.attrib['id'] == id_:
+                return self.file_by_name(file.attrib['name'])
+
     def add_item(self, tag, text=None, attribs=None, parent=None):
         """forwards to body method"""
         self.body.add_item(tag, text=text, attribs=attribs, parent=parent)

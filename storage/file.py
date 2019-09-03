@@ -6,6 +6,7 @@ from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
 from email import encoders
 from os.path import getmtime
+from datetime import datetime
 
 __all__ = ['file_from_local', 'File']
 
@@ -33,9 +34,9 @@ class File():
     def __init__(self, name, data, mime, time=None):
         self.name = name
         self.data = data
-        self.time = time
-        self.size = len(data)
         self.mime = mime
+        self.time = time if time else datetime.now().timestamp()
+        self.size = len(data)
 
     def read(self):
         """Read the data of the object"""
@@ -56,7 +57,10 @@ class File():
             ctype = 'application/octet-stream'
         maintype, subtype = ctype.split('/', 1)
         if maintype == 'text':
-            msg = MIMEText(str(self.read(), 'utf-8'), _subtype=subtype)
+            try:
+                msg = MIMEText(str(self.read(), 'utf-8'), _subtype=subtype)
+            except TypeError:
+                msg = MIMEText(str(self.read()), _subtype=subtype)
         elif maintype == 'image':
             msg = MIMEImage(self.read(), _subtype=subtype)
         elif maintype == 'audio':

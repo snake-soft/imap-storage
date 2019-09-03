@@ -55,7 +55,6 @@ class Imap(IMAPClient):
     def vdirs(self):
         """Virtual directories in selected Imap folder
         :returns: dictionary key=vdirs, value=list of uids
-        :TODO: only directorys without tag!!!
         """
         vdirs = {}
         subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
@@ -64,10 +63,17 @@ class Imap(IMAPClient):
                 subject[b'BODY[HEADER.FIELDS (SUBJECT)]'])['Subject']
             subject = subject.lstrip(f'{self.config.tag} ')
             if subject not in vdirs:
-                vdirs[subject] = [uid]
+                vdirs[subject] = [Email(self, uid)]
             else:
-                vdirs[subject].append(uid)
+                vdirs[subject].append(Email(self, uid))
         return vdirs
+
+    @property
+    def emails(self):
+        """
+        :returns: All self.uids as emails
+        """
+        return [Email(self, uid) for uid in self.uids]
 
     @property
     def uids(self):
@@ -75,6 +81,10 @@ class Imap(IMAPClient):
         :returns: All Message [ids] with *self.config.tag* in subject
         """
         return self.search(criteria=['SUBJECT', self.config.tag])
+
+    def email_by_uid(self, uid):
+        #return Email(self, uid) if int(uid) in self.uids else False
+        return [email for email in self.emails if email.uid == uid][0]
 
     def save_message(self, msg_obj):
         """save msg_obj to imap directory
@@ -92,14 +102,6 @@ class Imap(IMAPClient):
         self.delete_messages(uid)
         self.expunge()
         return uid not in self.uids
-
-    def get_email_obj(self, uids=None):
-        '''one or multiple'''
-        if not uids:
-            uids = self.uids
-        if isinstance(uids, int):
-            uids = [uids]
-        return {uid: Email(self, uid) for uid in uids}
 
     # Overwrites for time measuring
     @timer
