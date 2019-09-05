@@ -9,6 +9,8 @@ from .address import Address
 from .body import Body
 from .file import File
 
+from email.parser import BytesParser
+
 __all__ = ['Email']
 
 
@@ -57,7 +59,7 @@ class Email:
     def body(self):
         """access to the body object, fetch if not already done"""
         if self._body is None:
-            body = self.imap.fetch(self.uid, 'BODY[1]')[self.uid][b'BODY[1]']
+            body = self.imap.fetch(self.uid, 'BODY[1.1]')[self.uid][b'BODY[1.1]']
             self._body = Body(body.decode())  # ET.fromstring(body)
         return self._body
 
@@ -69,7 +71,6 @@ class Email:
             if self.uid:
                 msg = self.imap.fetch(self.uid, 'RFC822')[self.uid][b'RFC822']
                 msg = message_from_bytes(msg)
-                import pdb; pdb.set_trace()  # <---------
                 for payload in msg.get_payload()[1:]:  # first is body
                     name = payload['Content-Disposition'].split(
                         'filename=')[-1].strip('"')

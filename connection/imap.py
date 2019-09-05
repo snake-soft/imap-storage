@@ -1,8 +1,10 @@
 '''Imap connection class'''
 from email import message_from_bytes
-from imaplib import IMAP4
 from imapclient import IMAPClient, exceptions
-from lib.storage import Email
+try:
+    from .. import Email
+except ValueError:
+    from storage import Email
 
 __all__ = ['Imap', 'timer']
 

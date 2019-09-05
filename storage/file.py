@@ -7,6 +7,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 from os.path import getmtime
 from datetime import datetime
+from builtins import staticmethod
 
 __all__ = ['file_from_local', 'File']
 
@@ -48,13 +49,20 @@ class File():
         return self.human_readable_size(self.size)
 
     @property
+    def is_binary(self):
+        return self._binary_check(self.data)
+
+    @property
     def mime_obj(self):
         """This is for adding the File to a Multipart Message
         :returns: self as (hopefully) correct Mime Object
         """
         ctype = self.mime
         if ctype is None:  # No guess could be made
-            ctype = 'application/octet-stream'
+            if self.is_binary:
+                ctype = 'application/octet-stream'
+            else:
+                ctype = 'text/plain'
         maintype, subtype = ctype.split('/', 1)
         if maintype == 'text':
             try:
@@ -84,6 +92,12 @@ class File():
                 return "%3.1f%s%s" % (num, unit, suffix)
             num /= 1024.0
         return "%.1f%s%s" % (num, 'Yi', suffix)
+
+    @staticmethod
+    def _binary_check(binary):
+        textchars = bytearray({7,8,9,10,12,13,27} | set(
+            range(0x20, 0x100)) - {0x7f})
+        return bool(binary.translate(None, textchars))
 
     def __str__(self):
         return f'{self.name} ({self.hsize})'
