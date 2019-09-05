@@ -1,13 +1,13 @@
 ''' Email and Attachment class '''
 from email import message_from_bytes
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from copy import deepcopy
 
 from .head import Head
 from .address import Address
 from .body import Body
 from .file import File
-from email.mime.multipart import MIMEMultipart
 
 __all__ = ['Email']
 
@@ -24,10 +24,18 @@ class Email:
         self._body = None
         self._files = None
 
-    def new(self, directory, from_addr, from_displ):
+    def new(self, directory, from_addr=None, from_displ=None):
         """needs to be runned if its a ne Email with no uid"""
+        directory = '%s%s%s' % (
+            '/' if directory[0] != '/' else '',
+            directory,
+            '/' if directory[-1] != '/' else '',
+            )
         subject = f'{self.imap.config.tag} {directory}'
-        from_addr_obj = Address(addr_spec=from_addr, display_name=from_displ)
+        from_addr_obj = Address(
+            addr_spec=from_addr or self.imap.config.imap.user,
+            display_name=from_displ or self.imap.config.imap.user
+            )
         to_addr_obj = Address(
             addr_spec=self.imap.config.imap.user,
             display_name=self.imap.config.imap.user
@@ -61,6 +69,7 @@ class Email:
             if self.uid:
                 msg = self.imap.fetch(self.uid, 'RFC822')[self.uid][b'RFC822']
                 msg = message_from_bytes(msg)
+                import pdb; pdb.set_trace()  # <---------
                 for payload in msg.get_payload()[1:]:  # first is body
                     name = payload['Content-Disposition'].split(
                         'filename=')[-1].strip('"')
@@ -68,6 +77,47 @@ class Email:
                     data = payload.get_payload()
                     self._files.append(File(name, data, mime))
         return self._files
+
+    @property
+    def plain(self):
+        return self.to_string(html=False)
+        
+    @property
+    def html(self):
+        return self.to_string(html=True)
+
+    def to_string(self, html=False):
+        """ https://stackoverflow.com/a/43157340
+        mixed
+        |---alternative
+        |   |---text
+        |   |---related
+        |       |---html
+        |       |---inline image
+        |       |---inline image
+        |---attachment
+        |---attachment
+        """
+        msg = self.head
+        msg_alt = MIMEMultipart('alternative')
+        body = MIMEText(None, 'plain', 'utf-8')
+        body.replace_header('content-transfer-encoding', 'quoted-printable')
+        body.set_payload(str(self.body), 'utf-8')
+        msg_alt.attach(body)
+
+        if html:
+            msg_rel = MIMEMultipart('related')
+            body_html = MIMEText(None, 'html', 'utf-8')
+            body_html.replace_header(
+                'content-transfer-encoding', 'quoted-printable')
+            body_html.set_payload(str(self.body), 'utf-8')
+            msg_rel.attach(body_html)
+            msg_alt.attach(msg_rel)
+
+        msg.attach(msg_alt)
+        for file in self.files:
+            msg.attach(file.mime_obj)
+        return str(msg)
 
     def file_by_name(self, name):
         return [file for file in self.files if file.name == name][0]
@@ -126,83 +176,4 @@ class Email:
         return self.uid
 
     def __str__(self):
-        """
-        mixed
-            alternative
-                text
-                related
-                    html
-                    inline image
-                    inline image
-            attachment
-            attachment
-        """
-        msg = self.head
-        msg_alt = MIMEMultipart('alternative')
-        body = MIMEText(None, 'plain', 'utf-8')
-        body.replace_header('content-transfer-encoding', 'quoted-printable')
-        body.set_payload(str(self.body), 'utf-8')
-        msg_alt.attach(body)
-        msg.attach(msg_alt)
-        for file in self.files:
-            msg.attach(file.mime_obj)
-        return str(msg)
-
-#===============================================================================
-# def create_message_with_attachment(
-#     sender, to, subject, msgHtml, msgPlain, attachmentFile):
-#     """Create a message for an email.
-# 
-#     Args:
-#       sender: Email address of the sender.
-#       to: Email address of the receiver.
-#       subject: The subject of the email message.
-#       message_text: The text of the email message.
-#       file: The path to the file to be attached.
-# 
-#     Returns:
-#       An object containing a base64url encoded email object.
-#     """
-#     message = MIMEMultipart('mixed')
-#     message['to'] = to
-#     message['from'] = sender
-#     message['subject'] = subject
-# 
-#     message_alternative = MIMEMultipart('alternative')
-#     message_related = MIMEMultipart('related')
-# 
-#     message_related.attach(MIMEText(msgHtml, 'html'))
-#     message_alternative.attach(MIMEText(msgPlain, 'plain'))
-#     message_alternative.attach(message_related)
-# 
-#     message.attach(message_alternative)
-# 
-#     print "create_message_with_attachment: file:", attachmentFile
-#     content_type, encoding = mimetypes.guess_type(attachmentFile)
-# 
-#     if content_type is None or encoding is not None:
-#         content_type = 'application/octet-stream'
-#     main_type, sub_type = content_type.split('/', 1)
-#     if main_type == 'text':
-#         fp = open(attachmentFile, 'rb')
-#         msg = MIMEText(fp.read(), _subtype=sub_type)
-#         fp.close()
-#     elif main_type == 'image':
-#         fp = open(attachmentFile, 'rb')
-#         msg = MIMEImage(fp.read(), _subtype=sub_type)
-#         fp.close()
-#     elif main_type == 'audio':
-#         fp = open(attachmentFile, 'rb')
-#         msg = MIMEAudio(fp.read(), _subtype=sub_type)
-#         fp.close()
-#     else:
-#         fp = open(attachmentFile, 'rb')
-#         msg = MIMEBase(main_type, sub_type)
-#         msg.set_payload(fp.read())
-#         fp.close()
-#     filename = os.path.basename(attachmentFile)
-#     msg.add_header('Content-Disposition', 'attachment', filename=filename)
-#     message.attach(msg)
-# 
-#     return {'raw': base64.urlsafe_b64encode(message.as_string())}
-#===============================================================================
+        return self.plain

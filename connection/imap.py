@@ -1,8 +1,8 @@
 '''Imap connection class'''
 from email import message_from_bytes
-from imapclient import IMAPClient, exceptions
 from imaplib import IMAP4
-from storage import Email
+from imapclient import IMAPClient, exceptions
+from lib.storage import Email
 
 __all__ = ['Imap', 'timer']
 
@@ -38,6 +38,11 @@ class Imap(IMAPClient):
             self.ssl_context = ssl.create_default_context()
             self.ssl_context.check_hostname = False
             self.ssl_context.verify_mode = ssl.CERT_NONE
+        super().__init__(
+            self.config.imap.host,
+            port=self.config.imap.port,
+            ssl_context=self.ssl_context if self.unsafe else None,
+            )
         self.connect()
 
     @timer
@@ -55,7 +60,7 @@ class Imap(IMAPClient):
             self.select_folder(self.config.directory)
         if self.state != 'SELECTED':
             raise exceptions.LoginError('Unable to connect')
-            
+
     @property
     def state(self):
         return self._imap.state
@@ -92,7 +97,10 @@ class Imap(IMAPClient):
         return self.search(criteria=['SUBJECT', self.config.tag])
 
     def email_by_uid(self, uid):
-        #return Email(self, uid) if int(uid) in self.uids else False
+        """Get email by uid
+        :param uid: uid to return
+        :returns: first found email object with uid
+        """
         return [email for email in self.emails if email.uid == uid][0]
 
     def save_message(self, msg_obj):
