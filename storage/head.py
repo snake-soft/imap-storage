@@ -7,6 +7,7 @@ __all__ = ['Head']
 
 
 class Head(MIMEMultipart):
+#class Head:
     """Represents the head of an Email
     :param msg_obj: either pass a msg_obj to parse or run Head().new(*)
     """

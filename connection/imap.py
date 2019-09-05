@@ -1,16 +1,16 @@
 '''Imap connection class'''
 from email import message_from_bytes
-from time import time
 from imapclient import IMAPClient, exceptions
 from imaplib import IMAP4
-from lib.storage import Email
+from storage import Email
 
 __all__ = ['Imap', 'timer']
+
 
 def timer(func):
     """@timer decorator"""
     from functools import wraps
-    # from time import time
+    from time import time
 
     @wraps(func)  # sets return meta to func meta
     def wrapper(*args, **kwargs):
@@ -63,7 +63,7 @@ class Imap(IMAPClient):
     @property
     def vdirs(self):
         """Virtual directories in selected Imap folder
-        :returns: dictionary key=vdirs, value=list of uids
+        :returns: dictionary key=vdirs, value=list of email objects
         """
         vdirs = {}
         subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
