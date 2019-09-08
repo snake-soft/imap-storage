@@ -50,6 +50,7 @@ class File():
 
     @property
     def is_binary(self):
+        """Make sure that its really a binary string (not 100%)"""
         return self._binary_check(self.data)
 
     @property
@@ -95,9 +96,17 @@ class File():
 
     @staticmethod
     def _binary_check(binary):
-        textchars = bytearray({7,8,9,10,12,13,27} | set(
+        textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(
             range(0x20, 0x100)) - {0x7f})
         return bool(binary.translate(None, textchars))
+
+    def as_response(self):
+        from django.http.response import HttpResponse
+        response = HttpResponse(self.read())
+        response['Content-Type'] = self.mime
+        response['Content-Disposition'] = \
+            f'attachment;filename="{self.name}"'
+        return response
 
     def __str__(self):
         return f'{self.name} ({self.hsize})'

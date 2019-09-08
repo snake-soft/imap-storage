@@ -1,6 +1,7 @@
 '''Imap connection class'''
 from email import message_from_bytes
 from imapclient import IMAPClient, exceptions
+from builtins import ConnectionResetError
 try:
     from .. import Email
 except ValueError:
@@ -47,9 +48,10 @@ class Imap(IMAPClient):
             )
         self.connect()
 
-    @timer
+    # @timer
     def connect(self):
         """Connect to Imap Server with credentials from self.config.imap"""
+        print(self.state)
         if not hasattr(self, '_imap'):
             super().__init__(
                 self.config.imap.host,
@@ -68,6 +70,10 @@ class Imap(IMAPClient):
         return self._imap.state
 
     @property
+    def is_ok(self):
+        return self.state is 'SELECTED'
+
+    @property
     def vdirs(self):
         """Virtual directories in selected Imap folder
         :returns: dictionary key=vdirs, value=list of email objects
@@ -75,9 +81,11 @@ class Imap(IMAPClient):
         vdirs = {}
         subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
         for uid, subject in subjects.items():
-            subject = message_from_bytes(
-                subject[b'BODY[HEADER.FIELDS (SUBJECT)]'])['Subject']
-            subject = subject.lstrip(f'{self.config.tag} ')
+            try:
+                subject = message_from_bytes(subject[b'BODY[HEADER.FIELDS (SUBJECT)]'])['Subject']
+                subject = subject.lstrip(f'{self.config.tag} ')
+            except (TypeError, KeyError) as error:
+                import pdb; pdb.set_trace()  # <---------
             if subject not in vdirs:
                 vdirs[subject] = [Email(self, uid)]
             else:
@@ -97,6 +105,15 @@ class Imap(IMAPClient):
         :returns: All Message [ids] with *self.config.tag* in subject
         """
         return self.search(criteria=['SUBJECT', self.config.tag])
+
+    def vdir_by_path(self, path):
+        """filters self.vdirs, not used"""
+        path = '%s%s%s' % (
+            '/' if path[0] != '/' else '',
+            path,
+            '/' if path[-1] != '/' else '',
+            )
+        return self.vdirs[f'{path}']
 
     def email_by_uid(self, uid):
         """Get email by uid
@@ -125,28 +142,43 @@ class Imap(IMAPClient):
     # Overwrites for time measuring
     @timer
     def search(self, criteria='ALL', charset=None):
-        self.connect()
-        return IMAPClient.search(self, criteria=criteria, charset=charset)
+        try:
+            self.connect()
+            return IMAPClient.search(self, criteria=criteria, charset=charset)
+        except ConnectionResetError as e:
+            import pdb; pdb.set_trace()  # <---------
 
     @timer
     def fetch(self, messages, data, modifiers=None):
-        self.connect()
-        return IMAPClient.fetch(self, messages, data, modifiers=modifiers)
+        try:
+            self.connect()
+            return IMAPClient.fetch(self, messages, data, modifiers=modifiers)
+        except ConnectionResetError as e:
+            import pdb; pdb.set_trace()  # <---------
 
     @timer
     def append(self, folder, msg, flags=(), msg_time=None):
-        self.connect()
-        return IMAPClient.append(
-            self, folder, msg, flags=flags, msg_time=msg_time)
+        try:
+            self.connect()
+            return IMAPClient.append(
+                self, folder, msg, flags=flags, msg_time=msg_time)
+        except ConnectionResetError as e:
+            import pdb; pdb.set_trace()  # <---------
 
     @timer
     def delete_messages(self, messages, silent=False):
-        self.connect()
-        return IMAPClient.delete_messages(self, messages, silent=silent)
+        try:
+            self.connect()
+            return IMAPClient.delete_messages(self, messages, silent=silent)
+        except ConnectionResetError as e:
+            import pdb; pdb.set_trace()  # <---------
 
     @timer
     def expunge(self, messages=None):
-        return IMAPClient.expunge(self, messages=messages)
+        try:
+            return IMAPClient.expunge(self, messages=messages)
+        except ConnectionResetError as e:
+            import pdb; pdb.set_trace()  # <---------
 
     def __str__(self):
         return self.config.imap.user

@@ -22,15 +22,19 @@ if __name__ == "__main__":
     #ssl_context.verify_mode = ssl.CERT_NONE
 
     imap = Imap(conf, unsafe=True)
-    att = file_from_local('/home/frank/kodi_crashlog-20190508_180630.log')
+    att = file_from_local('/home/frank/billisix')
+    att1 = file_from_local('/usr/bin/python')
+    att2 = file_from_local('/home/frank/XPrivacy_license.txt')
+    att1.mime_obj
     
     #email = Email(imap).new('/chat/', 'info@hennige-it.de', 'Faruk')
     email = Email(imap, imap.uids[-1])
+    email.body
+    #email.body.add_item('message', 'child')
     email.add_file(att)
     #email.remove_file_by_id('XUFrd0gv')
     #email.remove_file_by_id('tiFt59AS')
-    email.save()
-    #email.body.add_item('message', 'child')
+    #email.save()
     #email.add_file(att)
     #email.body.remove_item('86xoerHx')
     #ppp = email.body.add_item('message')

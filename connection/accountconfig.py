@@ -12,6 +12,10 @@ class AccountConfig:  # pylint: disable=too-few-public-methods
         self.tag = 'DjangoTest'
         self.domain = None
 
+    @property
+    def is_ok(self):
+        return all((self.imap.is_ok, self.smtp.is_ok))
+
     def __str__(self):
         return f'{self.imap}, {self.smtp}'
 
@@ -23,6 +27,10 @@ class _ImapConfig:  # pylint: disable=too-few-public-methods
         self.host = None
         self.port = None
 
+    @property
+    def is_ok(self):
+        return all(self.user, self.password)
+
     def __str__(self):
         return self.user
 
@@ -33,6 +41,11 @@ class _SmtpConfig:  # pylint: disable=too-few-public-methods
         self.password = None
         self.host = None
         self.port = None
+
+    @property
+    def is_ok(self):
+        #return all(self.user, self.password)
+        return True
 
     def __str__(self):
         return self.user
