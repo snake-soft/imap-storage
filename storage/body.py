@@ -1,5 +1,6 @@
 """Body class"""
 from lxml import etree as ET
+from .file import File
 
 __all__ = ['Body']
 
@@ -24,7 +25,12 @@ class Body:
         :param tag: Tag to return
         :returns: List of tag items
         """
-        return self.xml.xpath(f"//{tag}")
+        return [File(
+            file.attrib['name'],
+            size=file.attrib['size'],
+            time=file.attrib['time'],
+            id_=file.attrib['id']
+            ) for file in self.xml.xpath(f"//{tag}")]
 
     @property
     def xml_files(self):

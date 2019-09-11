@@ -82,11 +82,11 @@ class Imap(IMAPClient):
                 subject = message_from_bytes(
                     subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
                     )['Subject']
-                subject = subject.lstrip(f'{self.config.tag} ')
+                #subject = subject.lstrip(f'{self.config.tag} ')
             except (TypeError, KeyError) as error:
                 import pdb; pdb.set_trace()  # <---------
 
-            vdir = Vdir(self.config.tag, subject)
+            vdir = Vdir(subject)
             if vdir not in vdirs:
                 vdirs[vdir] = [Email(self, uid)]
             else:

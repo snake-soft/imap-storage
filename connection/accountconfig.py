@@ -9,12 +9,12 @@ class AccountConfig:  # pylint: disable=too-few-public-methods
         self.smtp = _SmtpConfig()
 
         self.directory = 'chat'
-        self.tag = 'DjangoTest'
+        self.tag = None
         self.domain = None
 
     @property
     def is_ok(self):
-        return all((self.imap.is_ok, self.smtp.is_ok))
+        return all((self.imap.is_ok, self.smtp.is_ok, self.tag))
 
     def __str__(self):
         return f'{self.imap}, {self.smtp}'

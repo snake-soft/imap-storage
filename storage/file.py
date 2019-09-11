@@ -32,12 +32,13 @@ class File():
     :param filename: Filename as string
     :param data: Data as string
     '''
-    def __init__(self, name, data, mime, time=None):
+    def __init__(self, name, data=None, mime=None, time=None, size=None, id_=None):
         self.name = name
         self.data = data
         self.mime = mime
-        self.time = time if time else datetime.now().timestamp()
-        self.size = len(data)
+        self.time = time or datetime.now().timestamp()
+        self.size = size or len(data)
+        self.id_ = id_
 
     def read(self):
         """Read the data of the object"""
@@ -88,6 +89,7 @@ class File():
     @staticmethod
     def human_readable_size(num, suffix='B'):
         '''changes the format of num into a human readable format'''
+        num = int(num)
         for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
             if abs(num) < 1024.0:
                 return "%3.1f%s%s" % (num, unit, suffix)
