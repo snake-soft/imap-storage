@@ -1,6 +1,5 @@
-from .file import file_from_local
+from .file import File, file_from_local
 from .vdir import Vdir
-from .file import File
 from .email import Email
 
 __all__ = [

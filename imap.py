@@ -2,8 +2,7 @@
 from email import message_from_bytes
 from builtins import ConnectionResetError
 from imapclient import IMAPClient, exceptions
-from . import Email, Vdir
-#from .storage.vdir import Vdir
+from .storage import Email, Vdir
 
 __all__ = ['Imap', 'timer']
 
@@ -80,11 +79,14 @@ class Imap(IMAPClient):
         subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
         for uid, subject in subjects.items():
             try:
-                subject = message_from_bytes(subject[b'BODY[HEADER.FIELDS (SUBJECT)]'])['Subject']
+                subject = message_from_bytes(
+                    subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
+                    )['Subject']
                 subject = subject.lstrip(f'{self.config.tag} ')
             except (TypeError, KeyError) as error:
                 import pdb; pdb.set_trace()  # <---------
-            vdir = subject # Vdir(subject)
+
+            vdir = Vdir(self.config.tag, subject)
             if vdir not in vdirs:
                 vdirs[vdir] = [Email(self, uid)]
             else:

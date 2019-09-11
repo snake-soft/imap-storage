@@ -1,7 +1,7 @@
 """lib imports"""
 from .imap import Imap
-from .storage import *
-from .connection import *
+from .storage import Email, Vdir, File, file_from_local
+from .connection import AccountConfig
 
 __all__ = [
     'Imap',
@@ -9,5 +9,5 @@ __all__ = [
     'Email',
     'file_from_local',
     'File',
-   # 'Vdir',
+    'Vdir',
     ]
