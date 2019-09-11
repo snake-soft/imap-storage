@@ -1,11 +1,9 @@
-'''Imap connection class'''
+"""Imap connection class"""
 from email import message_from_bytes
-from imapclient import IMAPClient, exceptions
 from builtins import ConnectionResetError
-try:
-    from .. import Email
-except ValueError:
-    from storage import Email
+from imapclient import IMAPClient, exceptions
+from . import Email, Vdir
+#from .storage.vdir import Vdir
 
 __all__ = ['Imap', 'timer']
 
@@ -86,10 +84,11 @@ class Imap(IMAPClient):
                 subject = subject.lstrip(f'{self.config.tag} ')
             except (TypeError, KeyError) as error:
                 import pdb; pdb.set_trace()  # <---------
-            if subject not in vdirs:
-                vdirs[subject] = [Email(self, uid)]
+            vdir = subject # Vdir(subject)
+            if vdir not in vdirs:
+                vdirs[vdir] = [Email(self, uid)]
             else:
-                vdirs[subject].append(Email(self, uid))
+                vdirs[vdir].append(Email(self, uid))
         return vdirs
 
     @property

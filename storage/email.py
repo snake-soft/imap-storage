@@ -82,7 +82,7 @@ class Email:
     @property
     def plain(self):
         return self.to_string(html=False)
-        
+
     @property
     def html(self):
         return self.to_string(html=True)
