@@ -1,6 +1,7 @@
 """Imap connection class"""
+from collections import OrderedDict
 from email import message_from_bytes
-from builtins import ConnectionResetError
+from builtins import ConnectionResetError, BrokenPipeError
 from imapclient import IMAPClient, exceptions
 from .storage import Email, Vdir
 
@@ -68,7 +69,7 @@ class Imap(IMAPClient):
 
     @property
     def is_ok(self):
-        return self.state is 'SELECTED'
+        return self.state == 'SELECTED'
 
     @property
     def vdirs(self):
@@ -91,7 +92,18 @@ class Imap(IMAPClient):
                 vdirs[vdir] = [Email(self, uid)]
             else:
                 vdirs[vdir].append(Email(self, uid))
-        return vdirs
+        return OrderedDict(sorted(vdirs.items(), key=lambda t: t[0]))
+
+    @property
+    def vdirs_files(self):
+        vdirs_files = {}
+        for vdir, vdir_emails in self.vdirs.items():
+            vdirs_files[vdir] = []
+            for email in vdir_emails:
+                for file in email.xml_files:
+                    vdirs_files[vdir].append(file)
+            vdirs_files[vdir] = sorted(vdirs_files[vdir])
+        return OrderedDict(sorted(vdirs_files.items(), key=lambda t: t[0]))
 
     @property
     def emails(self):
@@ -146,7 +158,9 @@ class Imap(IMAPClient):
         try:
             self.connect()
             return IMAPClient.search(self, criteria=criteria, charset=charset)
-        except ConnectionResetError as e:
+        except ConnectionResetError as error:
+            import pdb; pdb.set_trace()  # <---------
+        except BrokenPipeError as error:
             import pdb; pdb.set_trace()  # <---------
 
     @timer

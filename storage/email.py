@@ -7,9 +7,7 @@ from copy import deepcopy
 from .head import Head
 from .address import Address
 from .body import Body
-from .file import File
-
-from email.parser import BytesParser
+from .file import file_from_payload
 
 __all__ = ['Email']
 
@@ -59,7 +57,8 @@ class Email:
     def body(self):
         """access to the body object, fetch if not already done"""
         if self._body is None:
-            body = self.imap.fetch(self.uid, 'BODY[1.1]')[self.uid][b'BODY[1.1]']
+            body = self.imap.fetch(self.uid, 'BODY[1.1]'
+                                   )[self.uid][b'BODY[1.1]']
             self._body = Body(body.decode())  # ET.fromstring(body)
         return self._body
 
@@ -72,12 +71,12 @@ class Email:
                 msg = self.imap.fetch(self.uid, 'RFC822')[self.uid][b'RFC822']
                 msg = message_from_bytes(msg)
                 for payload in msg.get_payload()[1:]:  # first is body
-                    name = payload['Content-Disposition'].split(
-                        'filename=')[-1].strip('"')
-                    mime = payload['Content-Type']
-                    data = payload.get_payload()
-                    self._files.append(File(name, data, mime))
+                    self._files.append(file_from_payload(payload))
         return self._files
+
+    @property
+    def xml_files(self):
+        return self.body.xml_files
 
     @property
     def plain(self):
@@ -146,6 +145,7 @@ class Email:
             attribs = {
                 'name': file_obj.name,
                 'size': file_obj.size,
+                'mime': file_obj.mime,
                 }
             if file_obj.time:
                 attribs['time'] = file_obj.time
@@ -175,6 +175,9 @@ class Email:
         if delete_old:
             self.imap.delete_uid(delete_old)
         return self.uid
+
+    def __lt__(self, other):
+        return self.uid < other.uid
 
     def __str__(self):
         return self.plain

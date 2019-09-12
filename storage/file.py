@@ -5,11 +5,14 @@ from email.mime.image import MIMEImage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
 from email import encoders
-from os.path import getmtime
 from datetime import datetime
-from builtins import staticmethod
 
-__all__ = ['file_from_local', 'File']
+__all__ = [
+    'file_from_local',
+    'file_from_upload',
+    'file_from_payload',
+    'file_from_xml',
+    ]
 
 
 def file_from_local(path):
@@ -19,30 +22,73 @@ def file_from_local(path):
     from os import sep
     with open(path, 'rb') as file:
         data = file.read()
-    mime = MimeTypes().guess_type(path)[0]
-    name = path.split(sep)[-1]
-    time = getmtime(path)
-    return File(name, data, mime, time=time)
+    file = _File()
+    file.name = path.split(sep)[-1]
+    file.data = data
+    file.mime = MimeTypes().guess_type(path)[0]
+    # from os.path import getmtime
+    # file.time = getmtime(path)
+    return file
 
 
-class File():
-    '''Attachment class
+def file_from_upload(uploaded_file):
+    """create File object from Django uploaded file"""
+    file = _File()
+    file.name = uploaded_file.name
+    file.data = uploaded_file.read()
+    file.mime = uploaded_file.content_type.split(';')[0]
+    file.size = uploaded_file.size
+    return file
+
+
+def file_from_payload(payload):
+    """create File object from message payload"""
+    file = _File()
+    file.name = payload['Content-Disposition'].split(
+        'filename=')[-1].strip('"')
+    file.data = payload.get_payload()
+    file.mime = payload['Content-Type']
+    return file
+
+
+def file_from_xml(xml):
+    """create File object from xml structure"""
+    file = _File()
+    file.name = xml.attrib['name']
+    file.mime = xml.attrib['mime'] if 'mime' in xml.attrib else ''
+    file.size = xml.attrib['size']
+    file.time = xml.attrib['time']
+    file.id_ = xml.attrib['id']
+    return file
+
+
+class _File():
+    """Attachment class
     Maybe the following type later:
     from django.core.files import File
     :param filename: Filename as string
     :param data: Data as string
-    '''
-    def __init__(self, name, data=None, mime=None, time=None, size=None, id_=None):
-        self.name = name
-        self.data = data
-        self.mime = mime
-        self.time = time or datetime.now().timestamp()
-        self.size = size or len(data)
-        self.id_ = id_
+    """
+    def __init__(self):
+        #, name, data=None, mime=None, time=None, size=None, id_=None
+        self.name = None
+        self.data = None
+        self.mime = None
+        self.time = datetime.now().timestamp()
+        self.id_ = None
+        self._size = None
 
     def read(self):
         """Read the data of the object"""
         return self.data
+
+    @property
+    def size(self):
+        return self._size or len(self.data)
+
+    @size.setter
+    def size(self, size):
+        self._size = size
 
     @property
     def hsize(self):
@@ -109,6 +155,9 @@ class File():
         response['Content-Disposition'] = \
             f'attachment;filename="{self.name}"'
         return response
+
+    def __lt__(self, other):
+        return self.name < other.name
 
     def __str__(self):
         return f'{self.name} ({self.hsize})'

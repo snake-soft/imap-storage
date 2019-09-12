@@ -15,6 +15,9 @@ class Vdir:
     def __hash__(self):
         return hash((self.tag, self.subject))
 
+    def __lt__(self, other):
+        return self.item < other.item
+
     def __eq__(self, other):
         #import pdb; pdb.set_trace()  # <---------
         # isinstance
