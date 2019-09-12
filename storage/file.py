@@ -31,9 +31,10 @@ def file_from_local(path):
     return file
 
 
-def file_from_upload(uploaded_file):
+def file_from_upload(email_obj, uploaded_file):
     """create File object from Django uploaded file"""
     file = _File()
+    file.mail = email_obj
     file.name = uploaded_file.name
     file.data = uploaded_file.read()
     file.mime = uploaded_file.content_type.split(';')[0]
@@ -41,9 +42,10 @@ def file_from_upload(uploaded_file):
     return file
 
 
-def file_from_payload(payload):
+def file_from_payload(email_obj, payload):
     """create File object from message payload"""
     file = _File()
+    file.email = email_obj
     file.name = payload['Content-Disposition'].split(
         'filename=')[-1].strip('"')
     file.data = payload.get_payload()
@@ -51,9 +53,10 @@ def file_from_payload(payload):
     return file
 
 
-def file_from_xml(xml):
+def file_from_xml(email_obj, xml):
     """create File object from xml structure"""
     file = _File()
+    file.email = email_obj
     file.name = xml.attrib['name']
     file.mime = xml.attrib['mime'] if 'mime' in xml.attrib else ''
     file.size = xml.attrib['size']
@@ -70,17 +73,22 @@ class _File():
     :param data: Data as string
     """
     def __init__(self):
+        self.email = None
         #, name, data=None, mime=None, time=None, size=None, id_=None
         self.name = None
-        self.data = None
         self.mime = None
         self.time = datetime.now().timestamp()
         self.id_ = None
+        self._data = None
         self._size = None
 
-    def read(self):
-        """Read the data of the object"""
-        return self.data
+    @property
+    def data(self):
+        return self._data or self.email.file_by_name(self.name)
+
+    @data.setter
+    def data(self, data):
+        self._data = data
 
     @property
     def size(self):
@@ -132,6 +140,19 @@ class _File():
         )
         return msg
 
+    def read(self):
+        """Read the data of the object"""
+        return self.data
+
+    def as_response(self):
+        from django.http.response import HttpResponse
+        import pdb; pdb.set_trace()  # <---------
+        response = HttpResponse(self.read())
+        response['Content-Type'] = self.mime
+        response['Content-Disposition'] = \
+            f'attachment;filename="{self.name}"'
+        return response
+
     @staticmethod
     def human_readable_size(num, suffix='B'):
         '''changes the format of num into a human readable format'''
@@ -147,14 +168,6 @@ class _File():
         textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(
             range(0x20, 0x100)) - {0x7f})
         return bool(binary.translate(None, textchars))
-
-    def as_response(self):
-        from django.http.response import HttpResponse
-        response = HttpResponse(self.read())
-        response['Content-Type'] = self.mime
-        response['Content-Disposition'] = \
-            f'attachment;filename="{self.name}"'
-        return response
 
     def __lt__(self, other):
         return self.name < other.name

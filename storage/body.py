@@ -6,8 +6,9 @@ __all__ = ['Body']
 
 
 class Body:
-    """This class represents the Email body"""
-    def __init__(self, xml_str=None):
+    """This class represents the Email body without physical attachments"""
+    def __init__(self, email, xml_str=None):
+        self.email = email
         parser = ET.XMLParser(remove_blank_text=True)
         self.xml = ET.fromstring(xml_str, parser) if xml_str else None
 
@@ -29,7 +30,8 @@ class Body:
 
     @property
     def xml_files(self):
-        files = [file_from_xml(file) for file in self.get_by_tag('file')]
+        files = [file_from_xml(self.email, file)
+                 for file in self.get_by_tag('file')]
         return sorted(files)
 
     def add_item(self, tag, text=None, attribs=None, parent=None):

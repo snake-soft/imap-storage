@@ -41,7 +41,7 @@ class Email:
             display_name=self.imap.config.imap.user
             )
         self._head = Head().new(subject, from_addr_obj, to_addr_obj)
-        self._body = Body().new()
+        self._body = Body(self).new()
         return self
 
     @property
@@ -59,7 +59,7 @@ class Email:
         if self._body is None:
             body = self.imap.fetch(self.uid, 'BODY[1.1]'
                                    )[self.uid][b'BODY[1.1]']
-            self._body = Body(body.decode())  # ET.fromstring(body)
+            self._body = Body(self, body.decode())  # ET.fromstring(body)
         return self._body
 
     @property
@@ -71,7 +71,7 @@ class Email:
                 msg = self.imap.fetch(self.uid, 'RFC822')[self.uid][b'RFC822']
                 msg = message_from_bytes(msg)
                 for payload in msg.get_payload()[1:]:  # first is body
-                    self._files.append(file_from_payload(payload))
+                    self._files.append(file_from_payload(self, payload))
         return self._files
 
     @property
@@ -80,6 +80,7 @@ class Email:
 
     @property
     def plain(self):
+        """ untested, unused """
         return self.to_string(html=False)
 
     @property
@@ -124,8 +125,8 @@ class Email:
 
     def file_by_id(self, id_):
         for file in self.body.xml_files:
-            if file.attrib['id'] == id_:
-                return self.file_by_name(file.attrib['name'])
+            if file.id_ == id_:
+                return self.file_by_name(file.name)
 
     def add_item(self, tag, text=None, attribs=None, parent=None):
         """forwards to body method"""
