@@ -7,6 +7,15 @@ class Vdir:
         self.app = splitted[0] if len(splitted) else '/'
         self.item = splitted[-1] if len(splitted) >= 2 else '/'
         self.path = '/'.join(splitted[1:-1]) if len(splitted) >= 3 else '/'
+        self._emails = []
+
+    @property
+    def emails(self):
+        return self._emails
+
+    @emails.setter
+    def emails(self, emails):
+        self._emails = emails
 
     @classmethod
     def set_class_tag(cls, tag):

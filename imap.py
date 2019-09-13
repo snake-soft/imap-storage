@@ -1,9 +1,9 @@
 """Imap connection class"""
 from collections import OrderedDict
-from email import message_from_bytes
 from builtins import ConnectionResetError, BrokenPipeError
 from imapclient import IMAPClient, exceptions
-from .storage import Email, Vdir
+from .storage import Email
+from .storage import Storage
 
 __all__ = ['Imap', 'timer']
 
@@ -32,6 +32,7 @@ class Imap(IMAPClient):
     :param unsafe: Workaround for invalid ssl certificates (unproductive only)
     """
     def __init__(self, config, unsafe=False):
+        self.storage = Storage(self)
         self.config = config
         self.unsafe = unsafe
         if unsafe:
@@ -46,22 +47,31 @@ class Imap(IMAPClient):
             )
         self.connect()
 
-    # @timer
+    def get_all_subjects(self):
+        return self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
+
     def connect(self):
         """Connect to Imap Server with credentials from self.config.imap"""
-        print(self.state)
-        if not hasattr(self, '_imap'):
-            super().__init__(
-                self.config.imap.host,
-                port=self.config.imap.port,
-                ssl_context=self.ssl_context if self.unsafe else None,
-                )
-        if self.state == 'NONAUTH':
-            self.login(self.config.imap.user, self.config.imap.password)
-        if self.state == 'AUTH':
-            self.select_folder(self.config.directory)
-        if self.state != 'SELECTED':
-            raise exceptions.LoginError('Unable to connect')
+        try:
+            if not hasattr(self, '_imap'):
+                super().__init__(
+                    self.config.imap.host,
+                    port=self.config.imap.port,
+                    ssl_context=self.ssl_context if self.unsafe else None,
+                    )
+            if self.state == 'NONAUTH':
+                self.login(self.config.imap.user, self.config.imap.password)
+            if self.state == 'AUTH':
+                self.select_folder(self.config.directory)
+            if self.state != 'SELECTED':
+                raise exceptions.LoginError('Unable to connect')
+
+        except ConnectionResetError as error:
+            print(error)
+            self.__init__(self.config, unsafe=True)
+
+        except BrokenPipeError as error:
+            import pdb; pdb.set_trace()  # <---------
 
     @property
     def state(self):
@@ -72,47 +82,6 @@ class Imap(IMAPClient):
         return self.state == 'SELECTED'
 
     @property
-    def vdirs(self):
-        """Virtual directories in selected Imap folder
-        :returns: dictionary key=vdirs, value=list of email objects
-        """
-        vdirs = {}
-        subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
-        for uid, subject in subjects.items():
-            try:
-                subject = message_from_bytes(
-                    subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
-                    )['Subject']
-                #subject = subject.lstrip(f'{self.config.tag} ')
-            except (TypeError, KeyError) as error:
-                import pdb; pdb.set_trace()  # <---------
-
-            vdir = Vdir(subject)
-            if vdir not in vdirs:
-                vdirs[vdir] = [Email(self, uid)]
-            else:
-                vdirs[vdir].append(Email(self, uid))
-        return OrderedDict(sorted(vdirs.items(), key=lambda t: t[0]))
-
-    @property
-    def vdirs_files(self):
-        vdirs_files = {}
-        for vdir, vdir_emails in self.vdirs.items():
-            vdirs_files[vdir] = []
-            for email in vdir_emails:
-                for file in email.xml_files:
-                    vdirs_files[vdir].append(file)
-            vdirs_files[vdir] = sorted(vdirs_files[vdir])
-        return OrderedDict(sorted(vdirs_files.items(), key=lambda t: t[0]))
-
-    @property
-    def emails(self):
-        """
-        :returns: All self.uids as emails
-        """
-        return [Email(self, uid) for uid in self.uids]
-
-    @property
     def uids(self):
         """Get messages on Imap folder
         :returns: All Message [ids] with *self.config.tag* in subject
@@ -120,20 +89,14 @@ class Imap(IMAPClient):
         return self.search(criteria=['SUBJECT', self.config.tag])
 
     def vdir_by_path(self, path):
-        """filters self.vdirs, not used"""
-        path = '%s%s%s' % (
-            '/' if path[0] != '/' else '',
-            path,
-            '/' if path[-1] != '/' else '',
-            )
-        return self.vdirs[f'{path}']
+        """ REMOVE!!! """
+        raise NotImplementedError('Remove!!!')
+        # return self.storage.vdir_by_path(path)
 
     def email_by_uid(self, uid):
-        """Get email by uid
-        :param uid: uid to return
-        :returns: first found email object with uid
-        """
-        return [email for email in self.emails if email.uid == uid][0]
+        """ REMOVE!!! """
+        raise NotImplementedError('Remove!!!')
+        # return self.storage.email_by_uid(uid)
 
     def save_message(self, msg_obj):
         """save msg_obj to imap directory
@@ -152,48 +115,50 @@ class Imap(IMAPClient):
         self.expunge()
         return uid not in self.uids
 
-    # Overwrites for time measuring
     @timer
     def search(self, criteria='ALL', charset=None):
-        try:
-            self.connect()
-            return IMAPClient.search(self, criteria=criteria, charset=charset)
-        except ConnectionResetError as error:
-            import pdb; pdb.set_trace()  # <---------
-        except BrokenPipeError as error:
-            import pdb; pdb.set_trace()  # <---------
+        self.connect()
+        return IMAPClient.search(self, criteria=criteria, charset=charset)
+
 
     @timer
     def fetch(self, messages, data, modifiers=None):
-        try:
-            self.connect()
-            return IMAPClient.fetch(self, messages, data, modifiers=modifiers)
-        except ConnectionResetError as e:
-            import pdb; pdb.set_trace()  # <---------
+        self.connect()
+        return IMAPClient.fetch(self, messages, data, modifiers=modifiers)
 
     @timer
     def append(self, folder, msg, flags=(), msg_time=None):
-        try:
-            self.connect()
-            return IMAPClient.append(
-                self, folder, msg, flags=flags, msg_time=msg_time)
-        except ConnectionResetError as e:
-            import pdb; pdb.set_trace()  # <---------
+        self.connect()
+        return IMAPClient.append(
+            self, folder, msg, flags=flags, msg_time=msg_time
+            )
 
     @timer
     def delete_messages(self, messages, silent=False):
-        try:
-            self.connect()
-            return IMAPClient.delete_messages(self, messages, silent=silent)
-        except ConnectionResetError as e:
-            import pdb; pdb.set_trace()  # <---------
+        self.connect()
+        return IMAPClient.delete_messages(self, messages, silent=silent)
 
     @timer
     def expunge(self, messages=None):
-        try:
-            return IMAPClient.expunge(self, messages=messages)
-        except ConnectionResetError as e:
-            import pdb; pdb.set_trace()  # <---------
+        return IMAPClient.expunge(self, messages=messages)
 
     def __str__(self):
         return self.config.imap.user
+
+    @property
+    def vdirs(self):
+        """ REMOVE!!! """
+        raise NotImplementedError('Remove!!!')
+        # return self.storage.vdirs
+
+    @property
+    def vdirs_files(self):
+        """ REMOVE!!! """
+        raise NotImplementedError('Remove!!!')
+        # return self.storage.vdirs_files
+
+    @property
+    def emails(self):
+        """ REMOVE!!! """
+        raise NotImplementedError('Remove!!!')
+        # return self.storage.emails
