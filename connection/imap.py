@@ -1,4 +1,5 @@
 """Imap connection class"""
+import sys
 from builtins import ConnectionResetError, BrokenPipeError
 from imapclient import IMAPClient, exceptions
 from email import message_from_bytes
@@ -18,15 +19,15 @@ def timer(func):
         arg_str = ', '.join([str(arg) for arg in args]
                             + [str(k) + "=" + str(v)
                                for k, v in kwargs.items()])
-        print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
+        if sys.argv[1] != 'test':
+            print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
         return ret
-
     return wrapper
 
 
 class Imap(IMAPClient):
     """Imap connection class
-    :param config: AccountConfig Object with correct data
+    :param config: Config Object with correct data
     :param unsafe: Workaround for invalid ssl certificates (unproductive only)
     """
     def __init__(self, config, unsafe=False):  # pylint: disable=W0231
@@ -52,8 +53,7 @@ class Imap(IMAPClient):
             if self.state != 'SELECTED':
                 raise exceptions.LoginError('Unable to connect')
 
-        except (ConnectionResetError, AttributeError, BrokenPipeError) as err:
-            print("There was an error: ", err)
+        except (ConnectionResetError, AttributeError, BrokenPipeError):
             super().__init__(
                 self.config.imap.host,
                 port=self.config.imap.port,
@@ -77,9 +77,9 @@ class Imap(IMAPClient):
     def state(self):
         return self._imap.state
 
-    @property
-    def is_ok(self):
-        return self.state == 'SELECTED'
+    #@property
+    #def is_ok(self):
+    #    return self.state == 'SELECTED'
 
     @property
     def uids(self):
@@ -185,31 +185,3 @@ class Imap(IMAPClient):
 
     def __str__(self):
         return self.config.imap.user
-
-    @property
-    def vdirs(self):
-        """ REMOVE!!! """
-        raise NotImplementedError('Remove!!!')
-        # return self.storage.vdirs
-
-    @property
-    def vdirs_files(self):
-        """ REMOVE!!! """
-        raise NotImplementedError('Remove!!!')
-        # return self.storage.vdirs_files
-
-    @property
-    def emails(self):
-        """ REMOVE!!! """
-        raise NotImplementedError('Remove!!!')
-        # return self.storage.emails
-
-    def vdir_by_path(self, path):
-        """ REMOVE!!! """
-        raise NotImplementedError('Remove!!!')
-        # return self.storage.vdir_by_path(path)
-
-    def email_by_uid(self, uid):
-        """ REMOVE!!! """
-        raise NotImplementedError('Remove!!!')
-        # return self.storage.email_by_uid(uid)

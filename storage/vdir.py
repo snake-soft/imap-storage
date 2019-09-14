@@ -61,6 +61,11 @@ class Vdir:
     def email_by_uid(self, uid):
         return [email for email in self.emails if email.uid == uid][0]
 
+    def delete(self):
+        self.imap.delete_messages(self.uids)
+        self.imap.expunge()
+        del self
+
     def __hash__(self):
         return hash((self.meta.tag, self.meta.subject))
 
@@ -81,6 +86,7 @@ class Vdir:
 
 
 class VdirMeta():
+    """Tag /app/path/path/item"""
     def __init__(self, subject):
         self.subject = subject
         self.tag, self.full_path = subject.split(' ', 1)

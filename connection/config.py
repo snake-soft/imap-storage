@@ -18,7 +18,6 @@ class Config:
     def is_ok(self):
         return all((self.imap.is_ok, self.smtp.is_ok, self.tag))
 
-    @classmethod
     def from_request(self, request):
         if all(x in request.session for x in ['imap_user', 'imap_password']):
             config = __class__()#Config()
