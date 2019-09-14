@@ -1,15 +1,29 @@
 ''' Email and Attachment class '''
-from email import message_from_bytes
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from copy import deepcopy
 
-from .head import Head
+from .head import Head, new_head
 from .address import Address
-from .body import Body
-from .file import file_from_payload
+from .body import Body, new_body
+from .file import file_from_payload, file_from_xml
 
 __all__ = ['Email']
+
+
+def new_email(config, vdir, from_addr=None, from_displ=None):
+    """needs to be runned if its a ne Email with no uid"""
+    from_addr_obj = Address(
+        addr_spec=from_addr or config.imap.user,
+        display_name=from_displ or config.imap.user
+        )
+    to_addr_obj = Address(
+        addr_spec=config.imap.user,
+        display_name=config.imap.user
+        )
+    email = Email(vdir, None)
+    email.head = new_head(vdir.meta.subject, from_addr_obj, to_addr_obj)
+    email.body = new_body()
+    return email
 
 
 class Email:
@@ -17,66 +31,65 @@ class Email:
     :param imap: Imap connection
     :param uid: new object if None - make sure to run *new* method
     """
-    def __init__(self, imap, uid=None):
-        self.imap = imap
+    def __init__(self, vdir, uid):
+        #self.imap = imap
+        self.vdir = vdir
         self.uid = uid
         self._head = None
         self._body = None
-        self._files = None
-
-    def new(self, directory, from_addr=None, from_displ=None):
-        """needs to be runned if its a ne Email with no uid"""
-        directory = '%s%s%s' % (
-            '/' if directory[0] != '/' else '',
-            directory,
-            '/' if directory[-1] != '/' else '',
-            )
-        subject = f'{self.imap.config.tag} {directory}'
-        from_addr_obj = Address(
-            addr_spec=from_addr or self.imap.config.imap.user,
-            display_name=from_displ or self.imap.config.imap.user
-            )
-        to_addr_obj = Address(
-            addr_spec=self.imap.config.imap.user,
-            display_name=self.imap.config.imap.user
-            )
-        self._head = Head().new(subject, from_addr_obj, to_addr_obj)
-        self._body = Body(self).new()
-        return self
+        self._files = []
 
     @property
     def head(self):
         """access to the head object, fetch if not already done"""
         if not self._head:
-            head = self.imap.fetch(
-                self.uid, 'BODY[HEADER]')[self.uid][b'BODY[HEADER]']
-            self._head = Head(message_from_bytes(head))
+            #===================================================================
+            # import pdb; pdb.set_trace()  # <---------
+            # head = self.imap.fetch(self.uid, 'BODY[HEADER]')[self.uid][b'BODY[HEADER]']
+            # self._head = Head(message_from_bytes(head))
+            #===================================================================
+            self.vdir.get_vdir_heads()
         return self._head
+
+    @head.setter
+    def head(self, head):
+        if isinstance(head, Head):
+            self._head = head
+        elif isinstance(head, str):
+            self._head = Head(head)
 
     @property
     def body(self):
         """access to the body object, fetch if not already done"""
-        if self._body is None:
-            body = self.imap.fetch(self.uid, 'BODY[1.1]'
-                                   )[self.uid][b'BODY[1.1]']
-            self._body = Body(self, body.decode())  # ET.fromstring(body)
+        if not self._body:
+            self.vdir.get_vdir_bodies()  # self.uid)
+            #self._body = Body(self, self.imap.get_bodies(self.uid)[self.uid])
         return self._body
+
+    @body.setter
+    def body(self, body):
+        if isinstance(body, Body):
+            self._body = body
+        elif isinstance(body, str):
+            self._body = Body(body)
 
     @property
     def files(self):
         """access to the file objects, fetch if not already done"""
-        if self._files is None:
-            self._files = []
-            if self.uid:
-                msg = self.imap.fetch(self.uid, 'RFC822')[self.uid][b'RFC822']
-                msg = message_from_bytes(msg)
-                for payload in msg.get_payload()[1:]:  # first is body
-                    self._files.append(file_from_payload(self, payload))
+        if self.uid and not self._files:
+            payloads = self.vdir.get_vdir_file_payloads(self.uid)
+            for payload in payloads[self.uid]:
+                self._files.append(file_from_payload(self, payload))
         return self._files
 
     @property
     def xml_files(self):
-        return self.body.xml_files
+        """
+        :returns: list of files
+        """
+        files = [file_from_xml(self, file)
+                 for file in self.body.get_by_tag('file')]
+        return sorted(files)
 
     @property
     def plain(self):
@@ -124,7 +137,7 @@ class Email:
         return [file for file in self.files if file.name == name][0]
 
     def file_by_id(self, id_):
-        for file in self.body.xml_files:
+        for file in self.xml_files:
             if file.id_ == id_:
                 return self.file_by_name(file.name)
 
@@ -171,14 +184,15 @@ class Email:
 
     def save(self):
         """Produce new Email from body, head and files, save it, delete old"""
-        delete_old = deepcopy(self.uid) if self.uid else False
-        self.uid = int(self.imap.save_message(str(self)))
-        if delete_old:
-            self.imap.delete_uid(delete_old)
+        email = self
+        email.uid = email.vdir.save_email(email)
         return self.uid
 
     def __lt__(self, other):
         return self.uid < other.uid
 
+    def __repr__(self):
+        return str(self)
+
     def __str__(self):
-        return self.plain
+        return f'{self.__class__.__name__}: {self.uid}'

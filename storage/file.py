@@ -34,7 +34,7 @@ def file_from_local(path):
 def file_from_upload(email_obj, uploaded_file):
     """create File object from Django uploaded file"""
     file = _File()
-    file.mail = email_obj
+    file.email = email_obj
     file.name = uploaded_file.name
     file.data = uploaded_file.read()
     file.mime = uploaded_file.content_type.split(';')[0]
@@ -60,7 +60,7 @@ def file_from_xml(email_obj, xml):
     file.name = xml.attrib['name']
     file.mime = xml.attrib['mime'] if 'mime' in xml.attrib else ''
     file.size = xml.attrib['size']
-    file.time = xml.attrib['time']
+    file.time = float(xml.attrib['time'])
     file.id_ = xml.attrib['id']
     return file
 
@@ -84,6 +84,9 @@ class _File():
 
     @property
     def data(self):
+        """
+        :TODO: Get automatically
+        """
         return self._data or self.email.file_by_name(self.name)
 
     @data.setter
@@ -97,6 +100,10 @@ class _File():
     @size.setter
     def size(self, size):
         self._size = size
+
+    @property
+    def htime(self):
+        return datetime.fromtimestamp(self.time)
 
     @property
     def hsize(self):

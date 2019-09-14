@@ -1,10 +1,8 @@
 """Imap connection class"""
-from collections import OrderedDict
 from builtins import ConnectionResetError, BrokenPipeError
 from imapclient import IMAPClient, exceptions
-from .storage import Email
 from .storage import Storage
-
+from email import message_from_bytes
 __all__ = ['Imap', 'timer']
 
 
@@ -19,7 +17,8 @@ def timer(func):
         ret = func(*args, **kwargs)
         dur = format((time() - start) * 1000, ".2f")
         arg_str = ', '.join([str(arg) for arg in args]
-                            +[str(k) + "=" + str(v) for k, v in kwargs.items()])
+                            + [str(k) + "=" + str(v)
+                               for k, v in kwargs.items()])
         print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
         return ret
 
@@ -31,7 +30,7 @@ class Imap(IMAPClient):
     :param config: AccountConfig Object with correct data
     :param unsafe: Workaround for invalid ssl certificates (unproductive only)
     """
-    def __init__(self, config, unsafe=False):
+    def __init__(self, config, unsafe=False):  # pylint: disable=W0231
         self.storage = Storage(self)
         self.config = config
         self.unsafe = unsafe
@@ -40,25 +39,14 @@ class Imap(IMAPClient):
             self.ssl_context = ssl.create_default_context()
             self.ssl_context.check_hostname = False
             self.ssl_context.verify_mode = ssl.CERT_NONE
-        super().__init__(
-            self.config.imap.host,
-            port=self.config.imap.port,
-            ssl_context=self.ssl_context if self.unsafe else None,
-            )
+        else:
+            self.ssl_context = None
         self.connect()
-
-    def get_all_subjects(self):
-        return self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
 
     def connect(self):
         """Connect to Imap Server with credentials from self.config.imap"""
         try:
-            if not hasattr(self, '_imap'):
-                super().__init__(
-                    self.config.imap.host,
-                    port=self.config.imap.port,
-                    ssl_context=self.ssl_context if self.unsafe else None,
-                    )
+            self.noop()
             if self.state == 'NONAUTH':
                 self.login(self.config.imap.user, self.config.imap.password)
             if self.state == 'AUTH':
@@ -66,12 +54,26 @@ class Imap(IMAPClient):
             if self.state != 'SELECTED':
                 raise exceptions.LoginError('Unable to connect')
 
-        except ConnectionResetError as error:
-            print(error)
-            self.__init__(self.config, unsafe=True)
+        except (ConnectionResetError, AttributeError, BrokenPipeError) as err:
+            print("There was an error: ", err)
+            super().__init__(
+                self.config.imap.host,
+                port=self.config.imap.port,
+                ssl_context=self.ssl_context or None,
+                )
 
-        except BrokenPipeError as error:
-            import pdb; pdb.set_trace()  # <---------
+    def get_all_subjects(self):
+        subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
+        subjects_cleaned = {}
+        for uid, subject in subjects.items():
+            subject = message_from_bytes(
+                subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
+                )['Subject']
+            if subject not in subjects_cleaned:
+                subjects_cleaned[subject] = [uid]
+            else:
+                subjects_cleaned[subject].append(object)
+        return subjects_cleaned
 
     @property
     def state(self):
@@ -88,20 +90,62 @@ class Imap(IMAPClient):
         """
         return self.search(criteria=['SUBJECT', self.config.tag])
 
-    def vdir_by_path(self, path):
-        """ REMOVE!!! """
-        raise NotImplementedError('Remove!!!')
-        # return self.storage.vdir_by_path(path)
+    def get_heads(self, uids):
+        """
+        :returns: dict of heads of uids {int(uid): str(head)}
+        """
+        heads = {}
+        if isinstance(uids, (int, str, float)):
+            uids = [str(int(uids))]
+        for uid, head in self.fetch(uids, 'BODY[HEADER]').items():
+            heads[uid] = head[b'BODY[HEADER]'].decode('utf-8')
+        return heads
 
-    def email_by_uid(self, uid):
-        """ REMOVE!!! """
-        raise NotImplementedError('Remove!!!')
-        # return self.storage.email_by_uid(uid)
+    def get_bodies(self, uids):
+        """
+        :returns: dict of bodies of uids {int(uid): str(body)}
+        """
+        bodies = {}
+        if isinstance(uids, (int, str, float)):
+            uids = [str(int(uids))]
+        for uid, body in self.fetch(uids, 'BODY[1.1]').items():
+            bodies[uid] = body[b'BODY[1.1]'].decode('utf-8')
+        return bodies
+
+
+    def get_file_payloads(self, uids):
+        """get payload of the files
+        :param uid: uid of the message to fetch
+        :returns: payloads --> {uid: message_object}
+        """
+        payloads = {}
+        if isinstance(uids, (int, str, float)):
+            uids = [str(int(uids))]
+        for uid, payload in self.fetch(uids, 'RFC822').items():
+            payloads[uid] = message_from_bytes(
+                payload[b'RFC822']
+                ).get_payload()[1:]
+        return payloads
+
+        #=======================================================================
+        # msg = self.fetch(uids, 'RFC822')[uids][b'RFC822']
+        # msg = message_from_bytes(msg)
+        # return msg.get_payload()[1:]
+        #=======================================================================
 
     def save_message(self, msg_obj):
         """save msg_obj to imap directory
         :returns: new uid on success or False
         """
+    # from email===========================================================================
+    # def save(self):
+    #     """Produce new Email from body, head and files, save it, delete old"""
+    #     delete_old = deepcopy(self.uid) if self.uid else False
+    #     self.uid = int(self.imap.save_message(str(self)))
+    #     if delete_old:
+    #         self.imap.delete_uid(delete_old)
+    #     return self.uid
+    #===========================================================================
         result = self.append(self.config.directory, str(msg_obj))
         # return 'Append completed.' in str(result)
         return int(result.decode('utf-8').split(']')[0].split()[-1])
@@ -119,7 +163,6 @@ class Imap(IMAPClient):
     def search(self, criteria='ALL', charset=None):
         self.connect()
         return IMAPClient.search(self, criteria=criteria, charset=charset)
-
 
     @timer
     def fetch(self, messages, data, modifiers=None):
@@ -162,3 +205,13 @@ class Imap(IMAPClient):
         """ REMOVE!!! """
         raise NotImplementedError('Remove!!!')
         # return self.storage.emails
+
+    def vdir_by_path(self, path):
+        """ REMOVE!!! """
+        raise NotImplementedError('Remove!!!')
+        # return self.storage.vdir_by_path(path)
+
+    def email_by_uid(self, uid):
+        """ REMOVE!!! """
+        raise NotImplementedError('Remove!!!')
+        # return self.storage.email_by_uid(uid)

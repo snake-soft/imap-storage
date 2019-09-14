@@ -1,75 +1,43 @@
-"""Interface of the Storage Module"""
-from email import message_from_bytes
-from collections import OrderedDict
-from . import Vdir, Email
+"""Factory for Vdir"""
+from .vdir import Vdir
 
 
 class Storage:
+    """Storage is the view of the IMAP directory"""
     def __init__(self, imap):
         self.imap = imap
+        self._subjects = []
 
     @property
     def vdirs(self):
         """Virtual directories in selected Imap folder
-        :returns: dictionary key=vdirs, value=list of email objects
+        :returns: list of vdir objects
         """
-        vdirs = {}
+        vdirs = []
         subjects = self.imap.get_all_subjects()
-        for uid, subject in subjects.items():
-            try:
-                subject = message_from_bytes(
-                    subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
-                    )['Subject']
-                #subject = subject.lstrip(f'{self.config.tag} ')
-            except (TypeError, KeyError) as error:
-                import pdb; pdb.set_trace()  # <---------
-
-            vdir = Vdir(subject)
-
-            vdirs[vdir] = []
-            vdirs[vdir].append(Email(self.imap, uid))
-        vdir.emails = [] # ###
-        return OrderedDict(sorted(vdirs.items(), key=lambda t: t[0]))
-
-    @property
-    def vdirs_files(self):
-        vdirs_files = {}
-        for vdir, vdir_emails in self.vdirs.items():
-            vdirs_files[vdir] = []
-            for email in vdir_emails:
-                for file in email.xml_files:
-                    vdirs_files[vdir].append(file)
-            vdirs_files[vdir] = sorted(vdirs_files[vdir])
-        return OrderedDict(sorted(vdirs_files.items(), key=lambda t: t[0]))
+        for subject, uids in subjects.items():
+            vdirs.append(Vdir(self.imap, subject, uids))
+        return sorted(vdirs)
 
     @property
     def emails(self):
-        """
-        :returns: All self.uids as emails
-        """
-        return [Email(self.imap, uid) for uid in self.imap.uids]
+        emails = []
+        for vdir in self.vdirs:
+            emails.extend(vdir.emails)
+        return sorted(emails)
 
-    def vdir_by_path(self, path):
-        """filters self.vdirs, not used"""
-        path = '%s%s%s' % (
-            '/' if path[0] != '/' else '',
-            path,
-            '/' if path[-1] != '/' else '',
-            )
-        return self.vdirs[f'{path}']
+    def vdir_by_subject(self, subject):
+        for vdir in self.vdirs:
+            if vdir.meta.subject == subject:
+                return vdir
+
+    def new_vdir(self, subject):
+        return Vdir(self.imap, subject, [])
 
     def email_by_uid(self, uid):
-        """Get email by uid
-        :param uid: uid to return
-        :returns: first found email object with uid
-        """
-        return [email for email in self.emails if email.uid == uid][0]
-
-    def save_message(self, msg_obj):
-        """save msg_obj to imap directory
-        :returns: new uid on success or False
-        """
-        return self.imap.save_message(msg_obj)
+        for vdir in self.vdirs:
+            if uid in vdir.uids:
+                return vdir.email_by_uid(uid)
 
     def delete_uid(self, uid):
         """delete message on the server
