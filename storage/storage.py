@@ -6,7 +6,7 @@ class Storage:
     """Storage is the view of the IMAP directory"""
     def __init__(self, imap):
         self.imap = imap
-        self._subjects = []
+        # self._subjects = []
 
     @property
     def vdirs(self):

@@ -1,4 +1,4 @@
 """lib imports"""
-from .imap import Imap
-from .accountconfig import AccountConfig
+from .connection import *
 from .storage import *
+from .account import *

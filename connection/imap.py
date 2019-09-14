@@ -1,7 +1,6 @@
 """Imap connection class"""
 from builtins import ConnectionResetError, BrokenPipeError
 from imapclient import IMAPClient, exceptions
-from .storage import Storage
 from email import message_from_bytes
 __all__ = ['Imap', 'timer']
 
@@ -31,7 +30,6 @@ class Imap(IMAPClient):
     :param unsafe: Workaround for invalid ssl certificates (unproductive only)
     """
     def __init__(self, config, unsafe=False):  # pylint: disable=W0231
-        self.storage = Storage(self)
         self.config = config
         self.unsafe = unsafe
         if unsafe:
