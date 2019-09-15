@@ -72,14 +72,18 @@ class ImapTest(CustomTestCase):
 
 class BodyTest(CustomTestCase):
     def test_add_and_remove_item(self):
-        item_parent = self.email.body.add_item('TEST', text='Foo', attribs={'foo': 'bar'})
-        item_child = self.email.body.add_item('TEST_CHILD', parent=item_parent)
+        item_parent = self.email.body.add_item(
+            'TEST', text='Foo', attribs={'foo': 'bar'}
+            )
+        self.email.body.add_item('TEST_CHILD', parent=item_parent)
         self.assertTrue(self.email.save())
         self.assertIn('<TEST foo="bar"', str(self.email.body))
 
         self.email.body.remove_item(item_parent.attrib['id'])
         self.assertTrue(self.email.save())
         self.assertNotIn('TEST', str(self.email.body))
+
+        self.assertIsInstance(self.email.body.get_by_tag('container'), list)
 
     def test_html(self):
         self.assertTrue(self.email.html.startswith(
