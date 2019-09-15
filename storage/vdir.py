@@ -56,22 +56,19 @@ class Vdir:
         """save msg_obj to imap directory
         :returns: new uid on success or False
         """
-        if isinstance(email_obj, str):
-            email_obj = message_from_string(email_obj)
         old_uid = deepcopy(email_obj.uid) if email_obj.uid else False
-        uid = int(self.imap.save_message(email_obj.to_string()))
+        uid = int(self.imap.save_message(email_obj.plain))
         if old_uid:
             self.imap.delete_uid(old_uid)
         email_obj.files = None
+        email_obj.uid = uid
         return uid
 
     def email_by_uid(self, uid):
         return [email for email in self.emails if email.uid == uid][0]
 
     def delete(self):
-        self.imap.delete_messages(self.uids)
-        self.imap.expunge()
-        del self
+        return self.imap.delete_uid(self.uids)
 
     def __hash__(self):
         return hash((self.meta.tag, self.meta.subject))

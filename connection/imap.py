@@ -64,12 +64,9 @@ class Imap(IMAPClient):
         subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
         subjects_cleaned = {}
         for uid, subject in subjects.items():
-            try:
-                subject = message_from_bytes(
-                    subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
-                    )['Subject']
-            except KeyError:
-                import pdb; pdb.set_trace()  # <---------
+            subject = message_from_bytes(
+                subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
+                )['Subject']
             if subject not in subjects_cleaned:
                 subjects_cleaned[subject] = [uid]
             else:
@@ -89,7 +86,8 @@ class Imap(IMAPClient):
         """Get messages on Imap folder
         :returns: All Message [ids] with *self.config.tag* in subject
         """
-        return self.search(criteria=['SUBJECT', self.config.tag])
+        ret = self.search(criteria=['SUBJECT', self.config.tag])
+        return sorted([uid for uid in ret])
 
     def get_heads(self, uids):
         """
@@ -138,27 +136,19 @@ class Imap(IMAPClient):
         """save msg_obj to imap directory
         :returns: new uid on success or False
         """
-    # from email===========================================================================
-    # def save(self):
-    #     """Produce new Email from body, head and files, save it, delete old"""
-    #     delete_old = deepcopy(self.uid) if self.uid else False
-    #     self.uid = int(self.imap.save_message(str(self)))
-    #     if delete_old:
-    #         self.imap.delete_uid(delete_old)
-    #     return self.uid
-    #===========================================================================
         result = self.append(self.config.directory, str(msg_obj))
-        # return 'Append completed.' in str(result)
         return int(result.decode('utf-8').split(']')[0].split()[-1])
 
-    def delete_uid(self, uid):
+    def delete_uid(self, uids):
         """delete message on the server
         :param uid: message uid to delete
         :returns: bool
         """
-        self.delete_messages(uid)
+        if isinstance(uids, (str, float, int)):
+            uids = [int(uids)]
+        self.delete_messages(uids)
         self.expunge()
-        return uid not in self.uids
+        return all(uid not in self.uids for uid in uids)
 
     @timer
     def search(self, criteria='ALL', charset=None):

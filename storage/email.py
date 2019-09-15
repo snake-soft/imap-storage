@@ -75,7 +75,9 @@ class Email:
             if self.uid:
                 payloads = self.vdir.get_vdir_file_payloads(self.uid)
                 for payload in payloads[self.uid]:
-                    self._files.append(file_from_payload(self, payload))
+                    if not payload['Content-Type'].startswith(
+                            'multipart/alternative;'):
+                        self._files.append(file_from_payload(self, payload))
         return self._files
 
     @files.setter
@@ -93,7 +95,6 @@ class Email:
 
     @property
     def plain(self):
-        """ untested, unused """
         return self.to_string(html=False)
 
     @property

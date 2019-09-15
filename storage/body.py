@@ -25,12 +25,15 @@ class Body:
         self.xml.attrib['id'] = self.new_id()
         return self
 
-    def get_by_tag(self, tag):
-        """Get xml item by tag
-        :param tag: Tag to return
-        :returns: List of tag items
-        """
-        return self.xml.xpath(f"//{tag}")
+    #===========================================================================
+    # def get_by_tag(self, tag):
+    #     """Get xml item by tag
+    #     :param tag: Tag to return
+    #     :returns: List of tag items
+    #     """
+    #     raise NotImplementedError
+    #     return self.xml.xpath(f"//{tag}")
+    #===========================================================================
 
     def add_item(self, tag, text=None, attribs=None, parent=None):
         """Add new Child to body or some other parent
