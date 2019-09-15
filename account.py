@@ -40,3 +40,6 @@ class Account:
         self.imap = Imap(config, unsafe=True)
         self.smtp = None
         self.storage = Storage(self.imap)
+
+    def close(self):
+        self.imap.logout()

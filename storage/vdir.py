@@ -11,6 +11,12 @@ class Vdir:
         self.uids = uids
         self.emails = [Email(self, uid) for uid in self.uids]
 
+    #===========================================================================
+    # @property
+    # def emails(self):
+    #     return [Email(self, uid) for uid in self.uids]
+    #===========================================================================
+
     @property
     def files(self):
         files = []
@@ -44,7 +50,7 @@ class Vdir:
         :returns: payloads as string
         """
         uid = uid or self.uids
-        return self.imap.get_file_payloads(self.uids)
+        return self.imap.get_file_payloads(uid)
 
     def save_email(self, email_obj):
         """save msg_obj to imap directory
@@ -56,6 +62,7 @@ class Vdir:
         uid = int(self.imap.save_message(email_obj.to_string()))
         if old_uid:
             self.imap.delete_uid(old_uid)
+        email_obj.files = None
         return uid
 
     def email_by_uid(self, uid):

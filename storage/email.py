@@ -37,17 +37,12 @@ class Email:
         self.uid = uid
         self._head = None
         self._body = None
-        self._files = []
+        self._files = None
 
     @property
     def head(self):
         """access to the head object, fetch if not already done"""
         if not self._head:
-            #===================================================================
-            # import pdb; pdb.set_trace()  # <---------
-            # head = self.imap.fetch(self.uid, 'BODY[HEADER]')[self.uid][b'BODY[HEADER]']
-            # self._head = Head(message_from_bytes(head))
-            #===================================================================
             self.vdir.get_vdir_heads()
         return self._head
 
@@ -63,7 +58,6 @@ class Email:
         """access to the body object, fetch if not already done"""
         if not self._body:
             self.vdir.get_vdir_bodies()  # self.uid)
-            #self._body = Body(self, self.imap.get_bodies(self.uid)[self.uid])
         return self._body
 
     @body.setter
@@ -76,11 +70,17 @@ class Email:
     @property
     def files(self):
         """access to the file objects, fetch if not already done"""
-        if self.uid and not self._files:
-            payloads = self.vdir.get_vdir_file_payloads(self.uid)
-            for payload in payloads[self.uid]:
-                self._files.append(file_from_payload(self, payload))
+        if self._files is None:
+            self._files = []
+            if self.uid:
+                payloads = self.vdir.get_vdir_file_payloads(self.uid)
+                for payload in payloads[self.uid]:
+                    self._files.append(file_from_payload(self, payload))
         return self._files
+
+    @files.setter
+    def files(self, files_list):
+        self._files = files_list
 
     @property
     def xml_files(self):
@@ -129,7 +129,9 @@ class Email:
             msg_alt.attach(msg_rel)
 
         msg.attach(msg_alt)
-        for file in self.files:
+
+        files = self.files
+        for file in files:
             msg.attach(file.mime_obj)
         return str(msg)
 
@@ -155,7 +157,7 @@ class Email:
         :returns: success bool
         """
         if file_obj.name not in [file.name for file in self.files]:
-            self._files.append(file_obj)
+            self.files.append(file_obj)
             attribs = {
                 'name': file_obj.name,
                 'size': file_obj.size,
@@ -184,9 +186,7 @@ class Email:
 
     def save(self):
         """Produce new Email from body, head and files, save it, delete old"""
-        email = self
-        email.uid = email.vdir.save_email(email)
-        return self.uid
+        return self.vdir.save_email(self)
 
     def __lt__(self, other):
         return self.uid < other.uid

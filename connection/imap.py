@@ -64,13 +64,16 @@ class Imap(IMAPClient):
         subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
         subjects_cleaned = {}
         for uid, subject in subjects.items():
-            subject = message_from_bytes(
-                subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
-                )['Subject']
+            try:
+                subject = message_from_bytes(
+                    subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
+                    )['Subject']
+            except KeyError:
+                import pdb; pdb.set_trace()  # <---------
             if subject not in subjects_cleaned:
                 subjects_cleaned[subject] = [uid]
             else:
-                subjects_cleaned[subject].append(object)
+                subjects_cleaned[subject].append(uid)
         return subjects_cleaned
 
     @property

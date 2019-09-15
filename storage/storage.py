@@ -26,6 +26,11 @@ class Storage:
             emails.extend(vdir.emails)
         return sorted(emails)
 
+    #===========================================================================
+    # def email_by_uid(self, uid):
+    #     return [email for email in self.emails if email.uid == uid][0]
+    #===========================================================================
+
     def vdir_by_subject(self, subject):
         for vdir in self.vdirs:
             if vdir.meta.subject == subject:
