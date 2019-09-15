@@ -30,7 +30,7 @@ class Config:
         return None
 
     def __str__(self):
-        return f'{self.imap}, {self.smtp}'
+        return f'{str(self.imap)}, {str(self.smtp)}'
 
 
 class _ImapConfig:  # pylint: disable=too-few-public-methods
@@ -42,10 +42,10 @@ class _ImapConfig:  # pylint: disable=too-few-public-methods
 
     @property
     def is_ok(self):
-        return all(self.user, self.password)
+        return all((self.user, self.password))
 
     def __str__(self):
-        return self.user
+        return str(self.user)
 
 
 class _SmtpConfig:  # pylint: disable=too-few-public-methods
@@ -61,4 +61,4 @@ class _SmtpConfig:  # pylint: disable=too-few-public-methods
         return True
 
     def __str__(self):
-        return self.user
+        return str(self.user)

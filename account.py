@@ -42,4 +42,4 @@ class Account:
         self.storage = Storage(self.imap)
 
     def close(self):
-        self.imap.logout()
+        return self.imap.logout() == b'Logging out'
