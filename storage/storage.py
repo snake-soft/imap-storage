@@ -44,9 +44,11 @@ class Storage:
             if uid in vdir.uids:
                 return vdir.email_by_uid(uid)
 
-    def delete_uid(self, uid):
-        """delete message on the server
-        :param uid: message uid to delete
-        :returns: bool
-        """
-        return self.imap.delete_uid(uid)
+    #===========================================================================
+    # def delete_uid(self, uids):
+    #     """delete message on the server
+    #     :param uid: message uid to delete
+    #     :returns: bool
+    #     """
+    #     return self.imap.delete_uid(uids)
+    #===========================================================================

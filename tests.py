@@ -4,7 +4,8 @@ from email import message_from_string
 from . import AccountFactory, Config
 from .storage.head import Head
 from .storage.body import Body
-
+from .storage.vdir import Vdir
+from .storage.email import Email
 
 __all__ = ['CustomTestCase']
 TAG = 'DjangoTest'
@@ -22,8 +23,8 @@ class CustomTestCase(TestCase):
         self.account = accounts.new(1, self.config)
         self.assertIs(accounts.by_id(1), self.account)
 
-        subject = f'{TAG} /home/TestDir/'
-        self.vdir = self.account.storage.new_vdir(subject)
+        self.subject = f'{TAG} /home/TestDir/'
+        self.vdir = self.account.storage.new_vdir(self.subject)
         self.email = self.vdir.new_email()
         self.email.save()
 
@@ -42,6 +43,23 @@ class ConfigTest(CustomTestCase):
 
     def test_is_ok(self):
         self.assertTrue(self.config.is_ok)
+
+
+class StorageTest(CustomTestCase):
+    def test_emails(self):
+        self.assertIsInstance(self.account.storage.emails, list)
+
+    def test_vdir_by_subject(self):
+        self.assertIsInstance(
+            self.account.storage.vdir_by_subject(self.subject),
+            Vdir,
+            )
+
+    def test_email_by_uid(self):
+        self.assertIsInstance(
+            self.account.storage.email_by_uid(self.email.uid),
+            Email,
+            )
 
 
 class ImapTest(CustomTestCase):
@@ -66,8 +84,12 @@ class ImapTest(CustomTestCase):
         self.assertIsInstance(self.imap.get_bodies(self.imap.uids[0]), dict)
 
     def test_get_file_payloads(self):
-        self.assertIsInstance(self.imap.get_file_payloads(self.imap.uids), dict)
-        self.assertIsInstance(self.imap.get_file_payloads(self.imap.uids[0]), dict)
+        self.assertIsInstance(
+            self.imap.get_file_payloads(self.imap.uids), dict
+            )
+        self.assertIsInstance(
+            self.imap.get_file_payloads(self.imap.uids[0]), dict
+            )
 
 
 class BodyTest(CustomTestCase):
