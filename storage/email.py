@@ -1,6 +1,7 @@
 ''' Email and Attachment class '''
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from copy import deepcopy
 
 from .head import Head, new_head
 from .address import Address
@@ -32,7 +33,6 @@ class Email:
     :param uid: new object if None - make sure to run *new* method
     """
     def __init__(self, vdir, uid):
-        #self.imap = imap
         self.vdir = vdir
         self.uid = uid
         self._head = None
@@ -43,7 +43,10 @@ class Email:
     def head(self):
         """access to the head object, fetch if not already done"""
         if not self._head:
-            self.vdir.get_vdir_heads()
+            self._head = self.vdir.get_vdir_heads()[self.uid]
+
+        if isinstance(self._head, str):
+            self._head = Head(self._head)
         return self._head
 
     @head.setter
@@ -113,7 +116,7 @@ class Email:
         |---attachment
         |---attachment
         """
-        msg = self.head
+        msg = deepcopy(self.head)
         msg_alt = MIMEMultipart('alternative')
         body = MIMEText(None, 'plain', 'utf-8')
         body.replace_header('content-transfer-encoding', 'quoted-printable')
@@ -146,7 +149,12 @@ class Email:
 
     def add_item(self, tag, text=None, attribs=None, parent=None):
         """forwards to body method"""
-        self.body.add_item(tag, text=text, attribs=attribs, parent=parent)
+        return self.body.add_item(
+            tag,
+            text=text,
+            attribs=attribs,
+            parent=parent
+            )
 
     def remove_item(self, id_):
         """forwards to body method"""
@@ -157,8 +165,7 @@ class Email:
         :param file_obj: Object of class storage.file.File
         :returns: success bool
         """
-        if file_obj.name not in [file.name for file in self.files]:
-            self.files.append(file_obj)
+        if file_obj.name not in [file.name for file in self.files]:  # genexp
             attribs = {
                 'name': file_obj.name,
                 'size': file_obj.size,
@@ -166,11 +173,10 @@ class Email:
                 }
             if file_obj.time:
                 attribs['time'] = file_obj.time
-            self.body.add_item('file', attribs=attribs)
-            ret = True
-        else:
-            ret = False
-        return ret
+            child = self.add_item('file', attribs=attribs)
+            file_obj.id_ = child.attrib['id']
+            self.files.append(file_obj)
+        return file_obj in self.files
 
     def remove_file_by_attrib(self, attrib, value):
         """remove file from email
@@ -185,9 +191,34 @@ class Email:
             if file.name == name:
                 self.files.remove(file)
 
+    def remove_file(self, file):
+        self.remove_file_by_attrib('name', file.name)
+
+    def refresh(self):
+        """runned by storage refresh"""
+        self._head = None
+        self._body = None
+        self._files = None
+
     def save(self):
         """Produce new Email from body, head and files, save it, delete old"""
-        return self.vdir.save_email(self)
+        imap = self.vdir.storage.imap
+        old_uid = self.uid or False
+        self.uid = int(imap.save_message(self.plain))
+        if old_uid:
+            imap.delete_uid(old_uid)
+        self._files = None
+        self.vdir.storage.refresh()
+        return self.uid
+
+    def __hash__(self):
+        return hash((self.uid))
+
+    def __eq__(self, other):
+        return self.uid == other.uid
+
+    def __ne__(self, other):
+        return not self == other
 
     def __lt__(self, other):
         return self.uid < other.uid

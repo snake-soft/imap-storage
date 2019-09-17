@@ -61,25 +61,28 @@ class Imap(IMAPClient):
                 )
 
     def get_all_subjects(self):
-        subjects = self.fetch(self.uids, 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]')
+        """
+        :returns: dict of subjects and uids {subject: [uid, uid]}
+        """
         subjects_cleaned = {}
-        for uid, subject in subjects.items():
-            subject = message_from_bytes(
-                subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
-                )['Subject']
-            if subject not in subjects_cleaned:
-                subjects_cleaned[subject] = [uid]
-            else:
-                subjects_cleaned[subject].append(uid)
+        if self.uids:
+            subjects = self.fetch(
+                self.uids,
+                'BODY.PEEK[HEADER.FIELDS (SUBJECT)]'
+                )
+            for uid, subject in subjects.items():
+                subject = message_from_bytes(
+                    subject[b'BODY[HEADER.FIELDS (SUBJECT)]']
+                    )['Subject']
+                if subject not in subjects_cleaned:
+                    subjects_cleaned[subject] = [uid]
+                else:
+                    subjects_cleaned[subject].append(uid)
         return subjects_cleaned
 
     @property
     def state(self):
         return self._imap.state
-
-    #@property
-    #def is_ok(self):
-    #    return self.state == 'SELECTED'
 
     @property
     def uids(self):
@@ -121,9 +124,12 @@ class Imap(IMAPClient):
         if isinstance(uids, (int, str, float)):
             uids = [str(int(uids))]
         for uid, payload in self.fetch(uids, 'RFC822').items():
-            payloads[uid] = message_from_bytes(
-                payload[b'RFC822']
-                ).get_payload()[1:]
+            if b'RFC822' in payload:
+                payloads[uid] = message_from_bytes(
+                    payload[b'RFC822']
+                    ).get_payload()[1:]
+            else:
+                payloads[uid] = []
         return payloads
 
         #=======================================================================
@@ -158,6 +164,8 @@ class Imap(IMAPClient):
     @timer
     def fetch(self, messages, data, modifiers=None):
         self.connect()
+        if not messages:
+            raise AttributeError('No message uids')
         return IMAPClient.fetch(self, messages, data, modifiers=modifiers)
 
     @timer

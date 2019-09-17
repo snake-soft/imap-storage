@@ -172,6 +172,8 @@ class _File():
 
     @staticmethod
     def _binary_check(binary):
+        if isinstance(binary, str):
+            binary = binary.encode('utf-8')
         textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(
             range(0x20, 0x100)) - {0x7f})
         return bool(binary.translate(None, textchars))
@@ -180,10 +182,7 @@ class _File():
         return self.name < other.name
 
     def __hash__(self):
-        return hash((self.email.uid, self.name))
-
-    def __lt__(self, other):
-        return self.name < other.name
+        return hash((self.name))
 
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()

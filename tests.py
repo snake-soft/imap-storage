@@ -1,11 +1,14 @@
 """unittests of the imap library (not using Django tests)"""
 from unittest import TestCase
+from os import path
+from datetime import datetime
 from email import message_from_string
 from . import AccountFactory, Config
 from .storage.head import Head
 from .storage.body import Body
 from .storage.vdir import Vdir
 from .storage.email import Email
+from .storage.file import _File, file_from_local
 
 __all__ = ['CustomTestCase']
 TAG = 'DjangoTest'
@@ -25,8 +28,7 @@ class CustomTestCase(TestCase):
 
         self.subject = f'{TAG} /home/TestDir/'
         self.vdir = self.account.storage.new_vdir(self.subject)
-        self.email = self.vdir.new_email()
-        self.email.save()
+        self.email = self.vdir.emails[-1]
 
     def tearDown(self):
         vdirs = self.account.storage.vdirs
@@ -46,9 +48,6 @@ class ConfigTest(CustomTestCase):
 
 
 class StorageTest(CustomTestCase):
-    def test_emails(self):
-        self.assertIsInstance(self.account.storage.emails, list)
-
     def test_vdir_by_subject(self):
         self.assertIsInstance(
             self.account.storage.vdir_by_subject(self.subject),
@@ -125,11 +124,47 @@ class HeadTest(CustomTestCase):
 class EmailTest(CustomTestCase):
     def test_head(self):
         self.assertIsInstance(self.email.head, Head)
+        self.email._head = None  # pylint: disable=W0212
+        self.assertIsInstance(self.email.head, Head)
 
     def test_body(self):
+        self.assertIsInstance(self.email.body, Body)
+
+        body = str(self.email.body)
+        self.email.body = body
+        self.assertIsInstance(self.email.body, Body)
+
+        self.email.body = Body(None)
+        self.assertIsInstance(self.email.body, Body)
+
+        self.email._body = None  # pylint: disable=W0212
         self.assertIsInstance(self.email.body, Body)
 
 
 class VdirTest(CustomTestCase):
     def test_files(self):
         self.assertIsInstance(self.vdir.files, list)
+
+
+class FileTest(CustomTestCase):
+    def test_file_from_path(self):
+        filepath = path.join(path.dirname(__file__), 'testfiles/textfile.txt')
+        file = file_from_local(filepath)
+
+        self.email.add_file(file)
+        self.email.save()
+        self.assertIsInstance(self.email.files[0], _File)
+        self.assertIsInstance(self.email.xml_files[0], _File)
+
+        for file in self.email.files:
+            self.email.remove_file(file)
+        self.email.save()
+        self.assertEqual(len(self.email.files), 0)
+
+        self.assertTrue(len(file.hsize))
+        self.assertFalse(file.is_binary)
+        self.assertIsInstance(file.htime, datetime)
+
+        file2 = file_from_local(filepath)
+        self.assertTrue(file == file2)
+        self.assertFalse(file != file2)

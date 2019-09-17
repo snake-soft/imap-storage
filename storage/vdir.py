@@ -1,21 +1,14 @@
-from copy import deepcopy
-from email import message_from_string
 from .email import Email, new_email
 
 
 class Vdir:
     """Virtual directory point of view"""
-    def __init__(self, imap, subject, uids):
-        self.imap = imap
+    def __init__(self, storage, subject, uid):
+        self.storage = storage
+        self.imap = self.storage.imap
         self.meta = VdirMeta(subject)
-        self.uids = uids
-        self.emails = [Email(self, uid) for uid in self.uids]
-
-    #===========================================================================
-    # @property
-    # def emails(self):
-    #     return [Email(self, uid) for uid in self.uids]
-    #===========================================================================
+        self.uids = uid
+        self._emails = None  # [Email(self, uid) for uid in self.uids]
 
     @property
     def files(self):
@@ -25,13 +18,34 @@ class Vdir:
                 files.append(file)
         return sorted(files)
 
+    @property
+    def emails(self):
+        if self._emails is None:
+            self._emails = [Email(self, uid) for uid in self.uids]
+        return self._emails
+
+    def refresh(self, uids):
+        emails = [Email(self, uid) for uid in uids]
+        result = self.list_compare(self.emails, emails)
+        for email in result['add']:
+            self.emails.append(email)
+        for email in result['rem']:
+            self.emails.remove(email)
+        self.uids = uids
+        for email in self.emails:
+            email.refresh()
+        return self.emails
+
     def new_email(self, from_addr=None, from_displ=None):
-        return new_email(
+        email = new_email(
             self.imap.config,
             self,
             from_addr=from_addr,
             from_displ=from_displ
             )
+        self.emails.append(email)
+        self.uids.append(email.save())
+        return email
 
     def get_vdir_heads(self):
         heads = self.imap.get_heads(self.uids)
@@ -52,23 +66,19 @@ class Vdir:
         uid = uid or self.uids
         return self.imap.get_file_payloads(uid)
 
-    def save_email(self, email_obj):
-        """save msg_obj to imap directory
-        :returns: new uid on success or False
-        """
-        old_uid = deepcopy(email_obj.uid) if email_obj.uid else False
-        uid = int(self.imap.save_message(email_obj.plain))
-        if old_uid:
-            self.imap.delete_uid(old_uid)
-        email_obj.files = None
-        email_obj.uid = uid
-        return uid
-
     def email_by_uid(self, uid):
         return [email for email in self.emails if email.uid == uid][0]
 
     def delete(self):
         return self.imap.delete_uid(self.uids)
+
+    @staticmethod
+    def list_compare(old, new):
+        """ return{'rem':[miss in new], 'add':[miss in old]} """
+        return {
+            'rem': [x for x in old if x not in new],
+            'add': [x for x in new if x not in old]
+            }
 
     def __hash__(self):
         return hash((self.meta.tag, self.meta.subject))
