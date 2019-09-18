@@ -1,4 +1,5 @@
 """Factory for Vdir"""
+from email.header import Header
 from .vdir import Vdir
 
 
@@ -29,7 +30,7 @@ class Storage:
         for vdir in result['rem']:
             self._vdirs.remove(vdir)
         for vdir in self._vdirs:
-            uids = subjects[vdir.meta.subject]
+            uids = subjects[vdir.meta.subject_encoded]
             vdir.refresh(uids)
 
     def vdir_by_subject(self, subject, or_newdir=False):

@@ -1,3 +1,4 @@
+from email.header import Header, decode_header
 from .email import Email, new_email
 
 
@@ -102,9 +103,32 @@ class Vdir:
 class VdirMeta():
     """Tag /app/path/path/item"""
     def __init__(self, subject):
-        self.subject = subject
-        self.tag, self.full_path = subject.split(' ', 1)
-        splitted = self.full_path.strip('/').split('/')
-        self.app = splitted[0] if splitted else '/'
-        self.item = splitted[-1] if len(splitted) >= 2 else '/'
-        self.path = '/'.join(splitted[1:-1]) if len(splitted) >= 3 else '/'
+        self.subject = decode_header(subject)[0][0]
+        if isinstance(self.subject, bytes):
+            self.subject = self.subject.decode('utf-8')
+        self.subject_encoded = Header(subject).encode()
+        self.splitted = self.full_path.strip('/').split('/')
+
+    @property
+    def tag(self):
+        return self.subject.split(' ', 1)[0]
+
+    @property
+    def full_path(self):
+        return self.subject.split(' ', 1)[1]
+
+    @property
+    def app(self):
+        splitted = self.splitted
+        return splitted[0] if splitted else '/'
+
+    @property
+    def item(self):
+        splitted = self.splitted
+        return splitted[-1] if len(splitted) >= 2 else '/'
+
+    @property
+    def path(self):
+        splitted = self.splitted
+        return '/'.join(splitted[1:-1]) if len(splitted) >= 3 else '/'
+
