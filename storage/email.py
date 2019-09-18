@@ -83,9 +83,9 @@ class Email:
                         self._files.append(file_from_payload(self, payload))
         return self._files
 
-    @files.setter
-    def files(self, files_list):
-        self._files = files_list
+#    @files.setter
+#    def files(self, files_list):
+#        self._files = files_list
 
     @property
     def xml_files(self):
@@ -156,9 +156,9 @@ class Email:
             parent=parent
             )
 
-    def remove_item(self, id_):
-        """forwards to body method"""
-        self.body.remove_item(id_)
+#    def remove_item(self, id_):
+#        """forwards to body method"""
+#        self.body.remove_item(id_)
 
     def add_file(self, file_obj):
         """add file to email
@@ -176,6 +176,7 @@ class Email:
             child = self.add_item('file', attribs=attribs)
             file_obj.id_ = child.attrib['id']
             self.files.append(file_obj)
+            self.save()
         return file_obj in self.files
 
     def remove_file_by_attrib(self, attrib, value):
@@ -190,6 +191,7 @@ class Email:
         for file in self.files:
             if file.name == name:
                 self.files.remove(file)
+        self.save()
 
     def remove_file(self, file):
         self.remove_file_by_attrib('name', file.name)

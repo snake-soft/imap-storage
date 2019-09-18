@@ -19,6 +19,7 @@ class Storage:
         return sorted(self._vdirs)
 
     def refresh(self):
+        """load new state of data of all vdir objects"""
         subjects = self.imap.get_all_subjects()
         old = self._vdirs or []
         new = [Vdir(self, subject, uids) for subject, uids in subjects.items()]
@@ -31,15 +32,27 @@ class Storage:
             uids = subjects[vdir.meta.subject]
             vdir.refresh(uids)
 
-    def vdir_by_subject(self, subject):
-        for vdir in self.vdirs:
-            if vdir.meta.subject == subject:
-                return vdir
+    def vdir_by_subject(self, subject, or_newdir=False):
+        """
+        :param subject: Subject to search
+        :param or_newdir: (optional) if vdir not exists, create it
+        :returns: vdir or new_vdir(optional) or false
+        """
+        ret = sorted(
+            [vdir for vdir in self.vdirs if vdir.meta.subject == subject]
+            )
+        if ret:
+            ret = ret[-1]
+        elif or_newdir:
+            ret = self.new_vdir(subject)
+        else:
+            ret = False
+        return ret
 
     def new_vdir(self, subject):
         vdir = Vdir(self, subject, [])
         self.vdirs.append(vdir)
-        email = vdir.new_email()
+        vdir.new_email()
         self.refresh()
         if vdir.uids == []:
             raise AttributeError

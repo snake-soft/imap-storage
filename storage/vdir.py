@@ -8,7 +8,7 @@ class Vdir:
         self.imap = self.storage.imap
         self.meta = VdirMeta(subject)
         self.uids = uid
-        self._emails = None  # [Email(self, uid) for uid in self.uids]
+        self._emails = None
 
     @property
     def files(self):

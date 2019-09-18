@@ -9,6 +9,7 @@ from .storage.body import Body
 from .storage.vdir import Vdir
 from .storage.email import Email
 from .storage.file import _File, file_from_local
+from copy import deepcopy
 
 __all__ = ['CustomTestCase']
 TAG = 'DjangoTest'
@@ -122,6 +123,15 @@ class HeadTest(CustomTestCase):
 
 
 class EmailTest(CustomTestCase):
+    def test_email(self):
+        email2 = self.email
+        self.assertFalse(self.email != email2)
+        self.assertIsInstance(str(self.email), str)
+        self.assertIsInstance(hash(self.email), int)
+        self.assertFalse(self.email > email2)
+        self.assertFalse(self.email < email2)
+        self.assertTrue(self.email.__repr__().startswith('Email:'))
+
     def test_head(self):
         self.assertIsInstance(self.email.head, Head)
         self.email._head = None  # pylint: disable=W0212
@@ -144,6 +154,11 @@ class EmailTest(CustomTestCase):
 class VdirTest(CustomTestCase):
     def test_files(self):
         self.assertIsInstance(self.vdir.files, list)
+        vdir2 = self.vdir
+        self.assertFalse(self.vdir != vdir2)
+        self.assertIsInstance(str(self.vdir), str)
+        self.assertIsInstance(hash(self.vdir), int)
+        self.assertTrue(self.vdir.__repr__().startswith('Vdir'))
 
 
 class FileTest(CustomTestCase):
@@ -168,3 +183,4 @@ class FileTest(CustomTestCase):
         file2 = file_from_local(filepath)
         self.assertTrue(file == file2)
         self.assertFalse(file != file2)
+        self.assertEqual(file.human_readable_size(1024*1024), '1.0MiB')

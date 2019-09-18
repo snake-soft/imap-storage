@@ -153,7 +153,6 @@ class _File():
 
     def as_response(self):
         from django.http.response import HttpResponse
-        #import pdb; pdb.set_trace()  # <---------
         response = HttpResponse(self.read())
         response['Content-Type'] = self.mime
         response['Content-Disposition'] = \
