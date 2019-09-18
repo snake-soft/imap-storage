@@ -1,5 +1,6 @@
 from .connection import Config, Imap
 from .storage import Storage
+from imapclient.exceptions import LoginError
 
 
 class AccountFactory:
@@ -12,8 +13,11 @@ class AccountFactory:
 
     def new(self, id_, config):
         new_acc = Account(id_, config)
-        self.accounts[id_] = new_acc
-        return new_acc
+        if new_acc.is_ok:
+            self.accounts[id_] = new_acc
+            return new_acc
+        else:
+            return False
 
     def by_id(self, id_):
         return self.accounts.get(id_, None)
@@ -40,6 +44,14 @@ class Account:
         self.imap = Imap(config, unsafe=True)
         self.smtp = None
         self.storage = Storage(self.imap)
+
+    @property
+    def is_ok(self):
+        try:
+            self.imap.login(self.config.imap.user, self.config.imap.password)
+        except LoginError:
+            return False
+        return True
 
     def close(self):
         return self.imap.logout() == b'Logging out'

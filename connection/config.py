@@ -18,14 +18,19 @@ class Config:
     def is_ok(self):
         return all((self.imap.is_ok, self.smtp.is_ok, self.tag))
 
-    def from_request(self, request):
+    @classmethod
+    def from_request(cls, request):
         if all(x in request.session for x in ['imap_user', 'imap_password']):
-            config = __class__()#Config()
+            config = cls()
             config.imap.user = request.session['imap_user']
             config.imap.password = request.session['imap_password']
-            config.imap.host = 'imap.hennige-it.de'
-            config.imap.port = 993
-            #config.tag = self.TAG
+            config.imap.host = request.session['imap_host']
+            config.imap.port = request.session['imap_port']
+
+            config.smtp.user = request.session['imap_user']
+            config.smtp.password = request.session['imap_password']
+            config.smtp.host = request.session['smtp_host']
+            config.smtp.port = request.session['smtp_port']
             return config
         return None
 
