@@ -13,7 +13,7 @@ class Storage:
         """Virtual directories in selected Imap folder
         :returns: list of vdir objects
         """
-        if self._vdirs is None:
+        if self._vdirs is None or True:
             self._vdirs = []
             self.refresh()
         return sorted(self._vdirs)
@@ -27,7 +27,7 @@ class Storage:
             self._vdirs.append(vdir)
         for vdir in result['rem']:
             self._vdirs.remove(vdir)
-        for vdir in self.vdirs:
+        for vdir in self._vdirs:
             uids = subjects[vdir.meta.subject]
             vdir.refresh(uids)
 
@@ -40,9 +40,7 @@ class Storage:
         vdir = Vdir(self, subject, [])
         self.vdirs.append(vdir)
         email = vdir.new_email()
-        #print(vdir.uids)
         self.refresh()
-        #print(vdir.uids)
         if vdir.uids == []:
             raise AttributeError
         return vdir

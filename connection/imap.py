@@ -7,7 +7,9 @@ __all__ = ['Imap', 'timer']
 
 
 def timer(func):
-    """@timer decorator"""
+    """@timer decorator
+    :TODO: option to shorten args at output
+    """
     from functools import wraps
     from time import time
 
@@ -65,9 +67,10 @@ class Imap(IMAPClient):
         :returns: dict of subjects and uids {subject: [uid, uid]}
         """
         subjects_cleaned = {}
-        if self.uids:
+        uids = self.uids
+        if uids:
             subjects = self.fetch(
-                self.uids,
+                uids,
                 'BODY.PEEK[HEADER.FIELDS (SUBJECT)]'
                 )
             for uid, subject in subjects.items():
