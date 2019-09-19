@@ -131,4 +131,3 @@ class VdirMeta():
     def path(self):
         splitted = self.splitted
         return '/'.join(splitted[1:-1]) if len(splitted) >= 3 else '/'
-

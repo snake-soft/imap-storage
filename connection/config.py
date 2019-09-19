@@ -62,7 +62,7 @@ class _SmtpConfig:  # pylint: disable=too-few-public-methods
 
     @property
     def is_ok(self):
-        #return all(self.user, self.password)
+        # return all(self.user, self.password)
         return True
 
     def __str__(self):

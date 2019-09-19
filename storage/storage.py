@@ -1,5 +1,4 @@
 """Factory for Vdir"""
-from email.header import Header
 from .vdir import Vdir
 
 
