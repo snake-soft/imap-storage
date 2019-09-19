@@ -2,6 +2,7 @@
 import sys
 from builtins import ConnectionResetError, BrokenPipeError
 from imapclient import IMAPClient, exceptions
+from imaplib import IMAP4
 from email import message_from_bytes
 __all__ = ['Imap', 'timer']
 
@@ -51,11 +52,20 @@ class Imap(IMAPClient):
             if self.state == 'NONAUTH':
                 self.login(self.config.imap.user, self.config.imap.password)
             if self.state == 'AUTH':
+                try:
+                    self.create_folder(self.config.directory)
+                except IMAP4.error:
+                    pass
                 self.select_folder(self.config.directory)
             if self.state != 'SELECTED':
                 raise exceptions.LoginError('Unable to connect')
 
-        except (ConnectionResetError, AttributeError, BrokenPipeError):
+        except (
+                ConnectionResetError,
+                AttributeError,
+                BrokenPipeError,
+                IMAP4.abort,
+                ):
             super().__init__(
                 self.config.imap.host,
                 port=self.config.imap.port,
@@ -117,7 +127,6 @@ class Imap(IMAPClient):
             bodies[uid] = body[b'BODY[1.1]'].decode('utf-8')
         return bodies
 
-
     def get_file_payloads(self, uids):
         """get payload of the files
         :param uid: uid of the message to fetch
@@ -134,12 +143,6 @@ class Imap(IMAPClient):
             else:
                 payloads[uid] = []
         return payloads
-
-        #=======================================================================
-        # msg = self.fetch(uids, 'RFC822')[uids][b'RFC822']
-        # msg = message_from_bytes(msg)
-        # return msg.get_payload()[1:]
-        #=======================================================================
 
     def save_message(self, msg_obj):
         """save msg_obj to imap directory

@@ -32,7 +32,7 @@ class Config:
             config.smtp.host = request.session['smtp_host']
             config.smtp.port = request.session['smtp_port']
             return config
-        return None
+        return False
 
     def __str__(self):
         return f'{str(self.imap)}, {str(self.smtp)}'
