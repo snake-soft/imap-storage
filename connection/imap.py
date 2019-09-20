@@ -22,8 +22,9 @@ def timer(func):
         arg_str = ', '.join([str(arg) for arg in args]
                             + [str(k) + "=" + str(v)
                                for k, v in kwargs.items()])
-        if sys.argv[1] != 'test':
-            print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
+        if sys.argv[0] != 'mod_wsgi':
+            if sys.argv[1] != 'test':
+                print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
         return ret
     return wrapper
 
