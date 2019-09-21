@@ -42,7 +42,7 @@ class _Account:
     def __init__(self, id_, config):
         self.id_ = id_
         self.config = config
-        self.imap = Imap(config, unsafe=True)
+        self.imap = Imap(config)
         self.smtp = None
         self.storage = Storage(self.imap)
 
