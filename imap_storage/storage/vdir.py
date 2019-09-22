@@ -1,5 +1,5 @@
 from email.header import Header, decode_header
-from .email import Email, new_email
+from imap_storage.storage.email.email import Email, new_email
 
 
 class Vdir:

@@ -2,8 +2,11 @@ from imapclient.exceptions import LoginError
 from .connection import Config, Imap
 from .storage import Storage
 
+__all__ = ['AccountManager', 'Account']
 
-class AccountFactory:
+
+class AccountManager:
+    """ manager (factory class) for Account class"""
     def __init__(self):
         self._accounts = {}
 
@@ -12,7 +15,7 @@ class AccountFactory:
         return self._accounts
 
     def new(self, id_, config):
-        new_acc = _Account(id_, config)
+        new_acc = Account(config, id_)
         if new_acc.is_ok:
             self.accounts[id_] = new_acc
             ret = new_acc
@@ -38,8 +41,9 @@ class AccountFactory:
         return account or None
 
 
-class _Account:
-    def __init__(self, id_, config):
+class Account:
+    """Use this if you only need one account or if you have another manager"""
+    def __init__(self, config, id_=None):
         self.id_ = id_
         self.config = config
         self.imap = Imap(config)

@@ -1,7 +1,7 @@
 """Head class"""
 from email.utils import formatdate, parseaddr
 from email.mime.multipart import MIMEMultipart
-from .address import Address
+from imap_storage.storage.email.address import Address
 from email import message_from_string
 
 __all__ = ['Head']

@@ -1,4 +1,4 @@
-from .file import *
+from .email.file import *
 from .vdir import Vdir
-from .email import Email
+from .email.email import Email
 from .storage import Storage

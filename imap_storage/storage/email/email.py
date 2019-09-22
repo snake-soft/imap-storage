@@ -3,10 +3,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from copy import deepcopy
 
-from .head import Head, new_head
-from .address import Address
-from .body import Body, new_body
-from .file import file_from_payload, file_from_xml
+from imap_storage.storage.email.head import Head, new_head
+from imap_storage.storage.email.address import Address
+from imap_storage.storage.email.body import Body, new_body
+from imap_storage.storage.email.file import file_from_payload, file_from_xml
 
 __all__ = ['Email']
 
