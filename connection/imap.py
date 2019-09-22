@@ -52,11 +52,7 @@ class Imap(IMAPClient):
             if self.state == 'NONAUTH':
                 self.login(self.config.imap.user, self.config.imap.password)
             if self.state == 'AUTH':
-                try:
-                    self.create_folder(self.config.directory)
-                except IMAP4.error:
-                    pass
-                self.select_folder(self.config.directory)
+                self.select_folder_or_create(self.config.directory)
             if self.state != 'SELECTED':
                 raise exceptions.LoginError('Unable to connect')
 
@@ -71,6 +67,16 @@ class Imap(IMAPClient):
                 port=self.config.imap.port,
                 ssl_context=self.ssl_context or None,
                 )
+
+    def select_folder_or_create(self, folder):
+        """
+        :returns: True if folder selected and is rw
+        """
+        try:
+            self.create_folder(folder)
+        except IMAP4.error:
+            pass
+        return self.select_folder(folder)[b'READ-WRITE']
 
     def get_all_subjects(self):
         """
