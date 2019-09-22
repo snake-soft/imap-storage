@@ -2,3 +2,6 @@
 .project
 .pydevproject
 .settings/
+/main.py
+*.pyc
+__pycache__
