@@ -1,30 +1,12 @@
 ''' Email and Attachment class '''
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formatdate
 from copy import deepcopy
 
-from imap_storage.storage.email.head import Head, new_head
-from imap_storage.storage.email.address import Address
-from imap_storage.storage.email.body import Body, new_body
+from imap_storage.storage.email.head import Head
+from imap_storage.storage.email.body import Body
 from imap_storage.storage.email.file import file_from_payload, file_from_xml
-
-__all__ = ['Email', 'new_email']
-
-
-def new_email(config, vdir, from_addr=None, from_displ=None):
-    """needs to be runned if its a ne Email with no uid"""
-    from_addr_obj = Address(
-        addr_spec=from_addr or config.imap.user,
-        display_name=from_displ or config.imap.user
-        )
-    to_addr_obj = Address(
-        addr_spec=config.imap.user,
-        display_name=config.imap.user
-        )
-    email = Email(vdir, None)
-    email.head = new_head(vdir.meta.subject, from_addr_obj, to_addr_obj)
-    email.body = new_body()
-    return email
 
 
 class Email:
@@ -32,8 +14,9 @@ class Email:
     :param imap: Imap connection
     :param uid: new object if None - make sure to run *new* method
     """
-    def __init__(self, vdir, uid):
-        self.vdir = vdir
+    def __init__(self, directory, uid):
+        #self.vdir = vdir
+        self.directory = directory
         self.uid = uid
         self._head = None
         self._body = None
@@ -43,8 +26,8 @@ class Email:
     def head(self):
         """access to the head object, fetch if not already done"""
         if not self._head:
-            self._head = self.vdir.get_vdir_heads()[self.uid]
-
+            self._head = self.directory.fetch_head(self)
+        #    self._head = self.vdir.get_vdir_heads()[self.uid]
         if isinstance(self._head, str):
             self._head = Head(self._head)
         return self._head
@@ -56,11 +39,27 @@ class Email:
         elif isinstance(head, str):
             self._head = Head(head)
 
+    def new_head(self, subject, from_addr_obj, to_addr_obj):
+        """Create new message and save it
+        :param subject: subject as string
+        :param from_addr_obj: from-address as *Address* Object
+        :param to_addr_obj: to-address as *Address* Object
+        :returns: self
+        """
+        head = Head()
+        head['From'] = str(from_addr_obj)
+        head['To'] = str(to_addr_obj)
+        head['Subject'] = f'{subject}'
+        head['Date'] = formatdate(localtime=True)
+        self.head = head
+        return self.head
+
     @property
     def body(self):
         """access to the body object, fetch if not already done"""
         if not self._body:
-            self.vdir.get_vdir_bodies()  # self.uid)
+            self._body = self.directory.fetch_body(self)
+            #self.vdir.get_vdir_bodies()  # self.uid)
         return self._body
 
     @body.setter
@@ -70,13 +69,17 @@ class Email:
         elif isinstance(body, str):
             self._body = Body(body)
 
+    def new_body(self):
+        self.body = Body(None).new()
+        return self.body
+
     @property
     def files(self):
         """access to the file objects, fetch if not already done"""
         if self._files is None:
             self._files = []
             if self.uid:
-                payloads = self.vdir.get_vdir_file_payloads(self.uid)
+                payloads = self.directory.fetch_payloads(self.uid)
                 for payload in payloads[self.uid]:
                     if not payload['Content-Type'].startswith(
                             'multipart/alternative;'):
@@ -204,13 +207,13 @@ class Email:
 
     def save(self):
         """Produce new Email from body, head and files, save it, delete old"""
-        imap = self.vdir.storage.imap
+        imap = self.directory.storage.imap
         old_uid = self.uid or False
         self.uid = int(imap.save_message(self.plain))
         if old_uid:
             imap.delete_uid(old_uid)
         self._files = None
-        self.vdir.storage.refresh()
+        #self.vdir.storage.refresh()
         return self.uid
 
     def __hash__(self):

@@ -4,23 +4,6 @@ from email.mime.multipart import MIMEMultipart
 from imap_storage.storage.email.address import Address
 from email import message_from_string
 
-__all__ = ['Head']
-
-
-def new_head(subject, from_addr_obj, to_addr_obj):
-    """Create new message and save it
-    :param subject: subject as string
-    :param from_addr_obj: from-address as *Address* Object
-    :param to_addr_obj: to-address as *Address* Object
-    :returns: self
-    """
-    head = Head()
-    head['From'] = str(from_addr_obj)
-    head['To'] = str(to_addr_obj)
-    head['Subject'] = f'{subject}'
-    head['Date'] = formatdate(localtime=True)
-    return head
-
 
 class Head(MIMEMultipart):
     """Represents the head of an Email

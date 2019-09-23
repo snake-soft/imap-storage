@@ -1,10 +1,5 @@
-from . import new_email, Email
-
-
-def new_directory(storage, path):
-    obj = Directory(storage, path)
-    storage.imap.create_folder_recursive(path)
-    return obj
+from .email.email import Email
+from .email.address import Address
 
 
 class Directory:
@@ -30,16 +25,50 @@ class Directory:
     def appname(self):
         return self.path.split('.')[0]
 
-    def new_email(self, from_addr=None, from_displ=None):
-        email = new_email(
-            self.imap.config,
-            self,
-            from_addr=from_addr,
-            from_displ=from_displ
+    def fetch_head(self, email):
+        return self.imap.get_heads(email.uid)[email.uid]
+
+    def fetch_body(self, email):
+        return self.imap.get_bodies(email.uid)[email.uid]
+
+    def fetch_payloads(self, email):
+        """
+        :returns: payloads as string
+        """
+        return self.imap.get_file_payloads(email.uid)[email.uid]
+
+    def new_email(self, vdir, from_addr=None, from_displ=None):
+        """needs to be runned if its a ne Email with no uid"""
+        config = self.storage.imap.config
+        from_addr_obj = Address(
+            addr_spec=from_addr or config.imap.user,
+            display_name=from_displ or config.imap.user
             )
-        self.emails.append(email)
-        self.uids.append(email.save())
+        to_addr_obj = Address(
+            addr_spec=config.imap.user,
+            display_name=config.imap.user
+            )
+        email = Email(self, None)
+        email.head = email.new_head(
+            vdir.meta.subject,
+            from_addr_obj,
+            to_addr_obj
+            )
+        email.body = email.new_body()
         return email
+
+    #===========================================================================
+    # def new_email(self, from_addr=None, from_displ=None):
+    #     email = new_email(
+    #         self.imap.config,
+    #         self,
+    #         from_addr=from_addr,
+    #         from_displ=from_displ
+    #         )
+    #     self.emails.append(email)
+    #     self.uids.append(email.save())
+    #     return email
+    #===========================================================================
 
     def __hash__(self):
         return hash(self.path)

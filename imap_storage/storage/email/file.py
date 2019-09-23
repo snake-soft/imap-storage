@@ -1,4 +1,5 @@
 """File class"""
+""":TODO: constructor functions are in wrong place"""
 from mimetypes import MimeTypes
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage

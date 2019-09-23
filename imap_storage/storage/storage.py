@@ -34,6 +34,10 @@ class Storage:
                 return directory
         return None
 
+    def new_directory(self, path):
+        self.imap.create_folder_recursive(path)
+        return Directory(self, path)
+
     # Vdir related
     def refresh(self):
         """load new state of data of all vdir objects"""

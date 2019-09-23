@@ -83,6 +83,7 @@ class Imap(IMAPClient):
         """
         :returns: True if folder selected and is rw
         """
+        folder = self.clean_folder_path(folder)
         try:
             self.create_folder_recursive(folder)
         except IMAP4.error:
@@ -90,14 +91,18 @@ class Imap(IMAPClient):
         return self.select_folder(folder)
 
     def create_folder_recursive(self, folder):
-        if not folder.startswith(self.config.directory):
-            folder = f'{self.config.directory}.{folder}'
+        folder = self.clean_folder_path(folder)
         folders = self.folders
         splitted = folder.split('.')
         for i in range(len(splitted)):
             folder_step = '.'.join(splitted[0:i+1])
             if folder_step not in folders:
                 self.create_folder(folder_step)
+
+    def clean_folder_path(self, folder):
+        if not folder.startswith(self.config.directory):
+            folder = f'{self.config.directory}.{folder}'
+        return folder
 
     def get_all_subjects(self):
         """

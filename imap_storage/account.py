@@ -1,6 +1,7 @@
 from imapclient.exceptions import LoginError
-from .connection import Config, Imap
-from .storage import Storage
+from .connection.config import Config
+from .connection.imap import Imap
+from .storage.storage import Storage
 
 __all__ = ['AccountManager', 'Account']
 

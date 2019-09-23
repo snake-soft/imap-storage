@@ -1,12 +1,6 @@
 """Body class"""
 from lxml import etree as ET
 
-__all__ = ['Body']
-
-
-def new_body():
-    return Body(None).new()
-
 
 class Body:
     """This class represents the Email body without physical attachments"""

@@ -1,3 +1,3 @@
-"""lib imports"""
-from .account import AccountManager, Account
-from .connection import Config
+"""only these items should be used from outside"""
+from .account import Account, AccountManager
+from .connection.config import Config
