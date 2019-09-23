@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='imap-storage',
-    version='0.1.1',
+    version='0.2.0beta1',
     description='Use your Email-account as Storage for data structures and files',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -33,8 +33,8 @@ setup(
 #        'Programming Language :: Python :: 2',
 #        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-#        'Programming Language :: Python :: 3.5',
-#        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
 
@@ -42,7 +42,7 @@ setup(
 
     packages=find_packages(exclude=['imap-storage']),
 
-    python_requires='>=3.7.*, <4',
+    python_requires='>=3.5.3, <4',
 
     install_requires=['imapclient', 'lxml'],
 
