@@ -1,8 +1,8 @@
 """Imap connection class"""
 import sys
 from builtins import ConnectionResetError, BrokenPipeError
-from imapclient import IMAPClient, exceptions
 from imaplib import IMAP4
+from imapclient import IMAPClient, exceptions
 from email import message_from_bytes
 __all__ = ['Imap', 'timer']
 
@@ -23,7 +23,7 @@ def timer(func):
                             + [str(k) + "=" + str(v)
                                for k, v in kwargs.items()])
         if sys.argv[0] != 'mod_wsgi':
-            if sys.argv[1] != 'test':
+            if len(sys.argv) >=2 and sys.argv[1] != 'test' or sys.argv[0]=='main.py':
                 print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
         return ret
     return wrapper
@@ -44,10 +44,17 @@ class Imap(IMAPClient):
             self.ssl_context.verify_mode = ssl.CERT_NONE
         else:
             self.ssl_context = None
+        self.current_folder = None
         self.connect()
 
     def connect(self):
         """Connect to Imap Server with credentials from self.config.imap"""
+        possible_errors = (
+                ConnectionResetError,
+                AttributeError,
+                BrokenPipeError,
+                IMAP4.abort,
+                )
         try:
             self.noop()
             if self.state == 'NONAUTH':
@@ -57,27 +64,40 @@ class Imap(IMAPClient):
             if self.state != 'SELECTED':
                 raise exceptions.LoginError('Unable to connect')
 
-        except (
-                ConnectionResetError,
-                AttributeError,
-                BrokenPipeError,
-                IMAP4.abort,
-                ):
+        except possible_errors:
             super().__init__(
                 self.config.imap.host,
                 port=self.config.imap.port,
                 ssl_context=self.ssl_context or None,
                 )
+            self.connect()
+
+    @property
+    def folders(self):
+        directory = self.config.directory
+        folders = [folder[2] for folder in self.list_folders()
+                   if folder[2].startswith(directory)]
+        return folders
 
     def select_folder_or_create(self, folder):
         """
         :returns: True if folder selected and is rw
         """
         try:
-            self.create_folder(folder)
+            self.create_folder_recursive(folder)
         except IMAP4.error:
             pass
-        return self.select_folder(folder)[b'READ-WRITE']
+        return self.select_folder(folder)
+
+    def create_folder_recursive(self, folder):
+        if not folder.startswith(self.config.directory):
+            folder = f'{self.config.directory}.{folder}'
+        folders = self.folders
+        splitted = folder.split('.')
+        for i in range(len(splitted)):
+            folder_step = '.'.join(splitted[0:i+1])
+            if folder_step not in folders:
+                self.create_folder(folder_step)
 
     def get_all_subjects(self):
         """
@@ -106,7 +126,7 @@ class Imap(IMAPClient):
 
     @property
     def uids(self):
-        """Get messages on Imap folder
+        """Get messages on current selected Imap folder
         :returns: All Message [ids] with *self.config.tag* in subject
         """
         ret = self.search(criteria=['SUBJECT', self.config.tag])
@@ -168,6 +188,13 @@ class Imap(IMAPClient):
         self.delete_messages(uids)
         self.expunge()
         return all(uid not in self.uids for uid in uids)
+
+    @timer
+    def select_folder(self, folder, readonly=False):
+        response = IMAPClient.select_folder(self, folder, readonly=readonly)
+        if response[b'READ-WRITE']:
+            self.current_folder = folder
+        return response[b'READ-WRITE']
 
     @timer
     def search(self, criteria='ALL', charset=None):

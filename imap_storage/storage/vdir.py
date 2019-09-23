@@ -1,14 +1,14 @@
 from email.header import Header, decode_header
-from imap_storage.storage.email.email import Email, new_email
+from . import Email, new_email
 
 
 class Vdir:
     """Virtual directory point of view"""
-    def __init__(self, storage, subject, uid):
+    def __init__(self, storage, subject, uids):
         self.storage = storage
         self.imap = self.storage.imap
         self.meta = VdirMeta(subject)
-        self.uids = uid
+        self.uids = uids
         self._emails = None
 
     @property

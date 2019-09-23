@@ -1,6 +1,5 @@
 """Body class"""
 from lxml import etree as ET
-from . import file_from_xml
 
 __all__ = ['Body']
 
@@ -12,7 +11,7 @@ def new_body():
 class Body:
     """This class represents the Email body without physical attachments"""
     def __init__(self, xml_str):
-        #self.email = email
+        # self.email = email
         parser = ET.XMLParser(remove_blank_text=True)
         self.xml = ET.fromstring(xml_str, parser) if xml_str else None
 

@@ -1,5 +1,6 @@
 """Factory for Vdir"""
 from .vdir import Vdir
+from .directory import Directory
 
 
 class Storage:
@@ -18,6 +19,22 @@ class Storage:
             self.refresh()
         return sorted(self._vdirs)
 
+    @property
+    def directories(self):
+        """
+        :param path: relative to the base path from self.imap.config.directory
+        :returns: list of Directory objects
+        """
+        folders = self.imap.folders
+        return [Directory(self, path) for path in folders]
+
+    def directory_by_path(self, path):
+        for directory in self.directories:
+            if directory.path == path:
+                return directory
+        return None
+
+    # Vdir related
     def refresh(self):
         """load new state of data of all vdir objects"""
         subjects = self.imap.get_all_subjects()

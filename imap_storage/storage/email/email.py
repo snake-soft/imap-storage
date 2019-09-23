@@ -8,7 +8,7 @@ from imap_storage.storage.email.address import Address
 from imap_storage.storage.email.body import Body, new_body
 from imap_storage.storage.email.file import file_from_payload, file_from_xml
 
-__all__ = ['Email']
+__all__ = ['Email', 'new_email']
 
 
 def new_email(config, vdir, from_addr=None, from_displ=None):
