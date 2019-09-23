@@ -45,6 +45,7 @@ class Imap(IMAPClient):
         else:
             self.ssl_context = None
         self.current_folder = None
+        self.init()
         self.connect()
 
     def connect(self):
@@ -64,13 +65,17 @@ class Imap(IMAPClient):
             if self.state != 'SELECTED':
                 raise exceptions.LoginError('Unable to connect')
 
-        except possible_errors:
-            super().__init__(
-                self.config.imap.host,
-                port=self.config.imap.port,
-                ssl_context=self.ssl_context or None,
-                )
+        except possible_errors as err:
+            print(err)
+            self.init()
             self.connect()
+
+    def init(self):
+        super().__init__(
+            self.config.imap.host,
+            port=self.config.imap.port,
+            ssl_context=self.ssl_context or None,
+            )
 
     @property
     def folders(self):
@@ -101,7 +106,10 @@ class Imap(IMAPClient):
 
     def clean_folder_path(self, folder):
         if not folder.startswith(self.config.directory):
-            folder = f'{self.config.directory}.{folder}'
+            folder = '{}.{}'.format(
+                self.config.directory,
+                folder,
+                )
         return folder
 
     def get_all_subjects(self):

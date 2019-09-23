@@ -156,8 +156,9 @@ class _File():
         from django.http.response import HttpResponse
         response = HttpResponse(self.read())
         response['Content-Type'] = self.mime
-        response['Content-Disposition'] = \
-            f'attachment;filename="{self.name}"'
+        response['Content-Disposition'] = 'attachment;filename="{}"'.format(
+            self.name
+            )
         return response
 
     @staticmethod
@@ -191,4 +192,4 @@ class _File():
         return not self == other
 
     def __str__(self):
-        return f'{self.name} ({self.hsize})'
+        return '{} ({})'.format(self.name, self.hsize)

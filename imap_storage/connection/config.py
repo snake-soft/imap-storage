@@ -35,7 +35,10 @@ class Config:
         return False
 
     def __str__(self):
-        return f'{str(self.imap)}, {str(self.smtp)}'
+        return '{}, {}'.format(
+            str(self.imap),
+            str(self.smtp),
+            )
 
 
 class _ImapConfig:  # pylint: disable=too-few-public-methods

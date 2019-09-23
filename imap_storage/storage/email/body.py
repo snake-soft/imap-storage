@@ -23,7 +23,7 @@ class Body:
         :param tag: Tag to return
         :returns: List of tag items
         """
-        return self.xml.xpath(f"//{tag}")
+        return self.xml.xpath('//{}'.format(tag))
 
     def add_item(self, tag, text=None, attribs=None, parent=None):
         """Add new Child to body or some other parent
@@ -47,7 +47,7 @@ class Body:
         """remove item from body
         :param id_: Id of the item to remove
         """
-        for bad in self.xml.xpath(f"//*[@id=\'{id_}\']"):
+        for bad in self.xml.xpath("//*[@id=\'{}\']".format(id_)):
             bad.getparent().remove(bad)
 
     @staticmethod

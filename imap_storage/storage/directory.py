@@ -37,7 +37,7 @@ class Directory:
         """
         return self.imap.get_file_payloads(email.uid)[email.uid]
 
-    def new_email(self, vdir, from_addr=None, from_displ=None):
+    def new_email(self, item_name, from_addr=None, from_displ=None):
         """needs to be runned if its a ne Email with no uid"""
         config = self.storage.imap.config
         from_addr_obj = Address(
@@ -50,25 +50,12 @@ class Directory:
             )
         email = Email(self, None)
         email.head = email.new_head(
-            vdir.meta.subject,
+            '{} {}'.format(self.imap.config.directory, item_name),
             from_addr_obj,
             to_addr_obj
             )
         email.body = email.new_body()
         return email
-
-    #===========================================================================
-    # def new_email(self, from_addr=None, from_displ=None):
-    #     email = new_email(
-    #         self.imap.config,
-    #         self,
-    #         from_addr=from_addr,
-    #         from_displ=from_displ
-    #         )
-    #     self.emails.append(email)
-    #     self.uids.append(email.save())
-    #     return email
-    #===========================================================================
 
     def __hash__(self):
         return hash(self.path)
@@ -83,7 +70,7 @@ class Directory:
         return not self == other
 
     def __repr__(self):
-        return f'{self.__class__.__name__}: {self.path}'
+        return '{}: {}'.format(self.__class__.__name__, self.path)
 
     def __str__(self):
         return self.path

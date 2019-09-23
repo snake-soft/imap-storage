@@ -15,7 +15,6 @@ class Email:
     :param uid: new object if None - make sure to run *new* method
     """
     def __init__(self, directory, uid):
-        #self.vdir = vdir
         self.directory = directory
         self.uid = uid
         self._head = None
@@ -27,7 +26,6 @@ class Email:
         """access to the head object, fetch if not already done"""
         if not self._head:
             self._head = self.directory.fetch_head(self)
-        #    self._head = self.vdir.get_vdir_heads()[self.uid]
         if isinstance(self._head, str):
             self._head = Head(self._head)
         return self._head
@@ -49,7 +47,7 @@ class Email:
         head = Head()
         head['From'] = str(from_addr_obj)
         head['To'] = str(to_addr_obj)
-        head['Subject'] = f'{subject}'
+        head['Subject'] = subject
         head['Date'] = formatdate(localtime=True)
         self.head = head
         return self.head
@@ -59,7 +57,6 @@ class Email:
         """access to the body object, fetch if not already done"""
         if not self._body:
             self._body = self.directory.fetch_body(self)
-            #self.vdir.get_vdir_bodies()  # self.uid)
         return self._body
 
     @body.setter
@@ -188,7 +185,8 @@ class Email:
         :param attrib: attribute to select
         :param value: value of the attribute
         """
-        for bad in self.body.xml.xpath(f"//*[@{attrib}=\'{value}\']"):
+        for bad in self.body.xml.xpath(
+                "//*[@{}=\'{}\']".format(attrib, value)):
             name = bad.get('name')
             bad.getparent().remove(bad)
         for file in self.files:
@@ -213,7 +211,6 @@ class Email:
         if old_uid:
             imap.delete_uid(old_uid)
         self._files = None
-        #self.vdir.storage.refresh()
         return self.uid
 
     def __hash__(self):
@@ -232,4 +229,7 @@ class Email:
         return str(self)
 
     def __str__(self):
-        return f'{self.__class__.__name__}: {self.uid}'
+        return '{}: {}'.format(
+            self.__class__.__name__,
+            self.uid,
+            )
