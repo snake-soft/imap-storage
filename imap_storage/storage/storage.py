@@ -17,11 +17,6 @@ class Storage:
         folders = self.imap.folders
         return sorted([Directory(self, path) for path in folders])
 
-    #===========================================================================
-    # @property
-    # def main_directory(self):
-    #===========================================================================
-
     def directory_by_path(self, path):
         path = self.clean_folder_path(path)
         for directory in self.directories:

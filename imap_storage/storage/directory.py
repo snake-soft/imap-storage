@@ -6,13 +6,15 @@ class Directory:
     def __init__(self, storage, path):
         self.storage = storage
         self.imap = storage.imap
+        if ' ' in path:
+            raise AttributeError('Directory path should not contain spaces')
         self.path = path
         self._emails = None
         self._uids = None
 
     @property
     def uids(self):
-        self.imap.select_folder(self.path)
+        self.imap.select_folder_or_create(self.path)
         return self.imap.uids
 
     @property
@@ -35,7 +37,10 @@ class Directory:
         """
         :returns: payloads as string
         """
-        return self.imap.get_file_payloads(email.uid)[email.uid]
+        try:
+            return self.imap.get_file_payloads(email.uid)[email.uid]
+        except:
+            import pdb; pdb.set_trace()  # <---------
 
     def new_email(self, item_name, from_addr=None, from_displ=None):
         """needs to be runned if its a ne Email with no uid"""

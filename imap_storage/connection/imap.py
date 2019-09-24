@@ -22,9 +22,11 @@ def timer(func):
         arg_str = ', '.join([str(arg) for arg in args]
                             + [str(k) + "=" + str(v)
                                for k, v in kwargs.items()])
-        if sys.argv[0] != 'mod_wsgi':
-            if len(sys.argv) >=2 and sys.argv[1] != 'test' or sys.argv[0]=='main.py':
-                print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
+        #=======================================================================
+        # if sys.argv[0] != 'mod_wsgi':
+        #     if len(sys.argv) >=2 and sys.argv[1] != 'test' or sys.argv[0]=='main.py':
+        #=======================================================================
+        print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
         return ret
     return wrapper
 
@@ -104,6 +106,7 @@ class Imap(IMAPClient):
                     pass
 
     def clean_folder_path(self, folder):
+        folder = folder.replace('/', '.')
         if not folder.startswith(self.config.directory):
             folder = '{}.{}'.format(
                 self.config.directory,
@@ -205,6 +208,7 @@ class Imap(IMAPClient):
 
     @timer
     def select_folder(self, folder, readonly=False):
+        folder = self.clean_folder_path(folder)
         response = IMAPClient.select_folder(self, folder, readonly=readonly)
         if response[b'READ-WRITE']:
             self.current_folder = folder

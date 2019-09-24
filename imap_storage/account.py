@@ -32,7 +32,7 @@ class AccountManager:
         if not account:
             config = Config().from_request(request)
             if config:
-                account = self.new(session_key, config)
+                account = self.new(config, session_key)
 
         return account or None
 

@@ -4,7 +4,7 @@ __all__ = ['Config']
 
 class Config:
     """Account Configuration class"""
-    TAG = 'DjangoTest'
+    TAG = 'IMAP-Storage'
 
     def __init__(self):
         self.imap = _ImapConfig()
