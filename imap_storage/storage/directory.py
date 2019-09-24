@@ -50,12 +50,23 @@ class Directory:
             )
         email = Email(self, None)
         email.head = email.new_head(
-            '{} {}'.format(self.imap.config.directory, item_name),
+            '{} {}'.format(self.imap.config.tag, item_name),
             from_addr_obj,
             to_addr_obj
             )
         email.body = email.new_body()
+        email.save()
+        self.emails.append(email)
         return email
+
+    def delete_email(self, email_uid_or_obj):
+        if isinstance(email_uid_or_obj, Email):
+            uid = email_uid_or_obj.uid
+        else:
+            uid = email_uid_or_obj
+        result = self.imap.delete_uid([uid])  # immer true :-(
+        self.emails.remove(Email(self, uid))
+        return result
 
     def __hash__(self):
         return hash(self.path)

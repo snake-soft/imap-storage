@@ -1,12 +1,12 @@
 """File class"""
-""":TODO: constructor functions are in wrong place"""
+from datetime import datetime
 from mimetypes import MimeTypes
+from email import encoders
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
-from email import encoders
-from datetime import datetime
+""":TODO: constructor functions are in wrong place"""
 
 __all__ = [
     'file_from_local',
@@ -153,6 +153,9 @@ class _File():
         return self.data
 
     def as_response(self):
+        """
+        TODO: if is base64...decode
+        """
         from django.http.response import HttpResponse
         response = HttpResponse(self.read())
         response['Content-Type'] = self.mime

@@ -65,8 +65,7 @@ class Imap(IMAPClient):
             if self.state != 'SELECTED':
                 raise exceptions.LoginError('Unable to connect')
 
-        except possible_errors as err:
-            print(err)
+        except (ConnectionResetError, BrokenPipeError, IMAP4.abort):
             self.init()
             self.connect()
 
@@ -89,10 +88,7 @@ class Imap(IMAPClient):
         :returns: True if folder selected and is rw
         """
         folder = self.clean_folder_path(folder)
-        try:
-            self.create_folder_recursive(folder)
-        except IMAP4.error:
-            pass
+        self.create_folder_recursive(folder)
         return self.select_folder(folder)
 
     def create_folder_recursive(self, folder):
@@ -102,7 +98,10 @@ class Imap(IMAPClient):
         for i in range(len(splitted)):
             folder_step = '.'.join(splitted[0:i+1])
             if folder_step not in folders:
-                self.create_folder(folder_step)
+                try:
+                    self.create_folder(folder_step)
+                except IMAP4.error:
+                    pass
 
     def clean_folder_path(self, folder):
         if not folder.startswith(self.config.directory):
@@ -112,10 +111,12 @@ class Imap(IMAPClient):
                 )
         return folder
 
-    def get_all_subjects(self):
+    def get_all_subjects(self, folder=None):
         """
         :returns: dict of subjects and uids {subject: [uid, uid]}
         """
+        if folder:
+            self.select_folder_or_create(folder)
         subjects_cleaned = {}
         uids = self.uids
         if uids:
@@ -227,6 +228,11 @@ class Imap(IMAPClient):
         return IMAPClient.append(
             self, folder, msg, flags=flags, msg_time=msg_time
             )
+
+    @timer
+    def delete_folder(self, folder):
+        folder = self.clean_folder_path(folder)
+        return IMAPClient.delete_folder(self, folder)
 
     @timer
     def delete_messages(self, messages, silent=False):

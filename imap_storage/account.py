@@ -16,13 +16,8 @@ class AccountManager:
         return self._accounts
 
     def new(self, config, id_):
-        new_acc = Account(config, id_)
-        if new_acc.is_ok or True:  # buggy
-            self.accounts[id_] = new_acc
-            ret = new_acc
-        else:
-            ret = False
-        return ret
+        self.accounts[id_] = Account(config, id_)
+        return self.accounts[id_]
 
     def by_id(self, id_):
         return self.accounts.get(id_, None)
@@ -44,22 +39,19 @@ class AccountManager:
 
 class Account:
     """Use this if you only need one account or if you have another manager"""
-    def __init__(self, config, id_):
+    def __init__(self, config, id_, unsafe=False):
         self.id_ = id_
         self.config = config
-        self.imap = Imap(config)
+        self.imap = Imap(config, unsafe)
         self.smtp = None
         self.storage = Storage(self.imap)
 
     @property
     def is_ok(self):
-        return self.imap._imap.check()[0] == 'OK'
+        return True  # self.imap._imap.check()[0] == 'OK'
 
     def close(self):
         return self.imap.logout() == b'Logging out'
-
-    def __hash__(self):
-        return hash(self.id_)
 
     def __lt__(self, other):
         return self.id_ < other.id_

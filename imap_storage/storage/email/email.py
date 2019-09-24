@@ -4,9 +4,9 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate
 from copy import deepcopy
 
-from imap_storage.storage.email.head import Head
-from imap_storage.storage.email.body import Body
-from imap_storage.storage.email.file import file_from_payload, file_from_xml
+from .head import Head
+from .body import Body
+from .file import file_from_payload, file_from_xml
 
 
 class Email:
@@ -56,7 +56,7 @@ class Email:
     def body(self):
         """access to the body object, fetch if not already done"""
         if not self._body:
-            self._body = self.directory.fetch_body(self)
+            self.body = self.directory.fetch_body(self)
         return self._body
 
     @body.setter
@@ -76,8 +76,8 @@ class Email:
         if self._files is None:
             self._files = []
             if self.uid:
-                payloads = self.directory.fetch_payloads(self.uid)
-                for payload in payloads[self.uid]:
+                payloads = self.directory.fetch_payloads(self)
+                for payload in payloads:
                     if not payload['Content-Type'].startswith(
                             'multipart/alternative;'):
                         self._files.append(file_from_payload(self, payload))
@@ -197,12 +197,6 @@ class Email:
     def remove_file(self, file):
         self.remove_file_by_attrib('name', file.name)
 
-    def refresh(self):
-        """runned by storage refresh"""
-        self._head = None
-        self._body = None
-        self._files = None
-
     def save(self):
         """Produce new Email from body, head and files, save it, delete old"""
         imap = self.directory.storage.imap
@@ -212,6 +206,9 @@ class Email:
             imap.delete_uid(old_uid)
         self._files = None
         return self.uid
+
+    def delete(self):
+        self.directory.delete_email(self)
 
     def __hash__(self):
         return hash((self.uid))

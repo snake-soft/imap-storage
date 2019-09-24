@@ -32,7 +32,6 @@ class Config:
             config.smtp.host = request.session['smtp_host']
             config.smtp.port = request.session['smtp_port']
             return config
-        return False
 
     def __str__(self):
         return '{}, {}'.format(
