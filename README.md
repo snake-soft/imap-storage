@@ -49,6 +49,8 @@ email.add_item('TestMessage', text='Your first message')
 
 First fill the data of your testserver in 'tests/secrets.py'
 ```
+git clone https://github.com/snake-soft/imap-storage.git
+cd imap-storage
 virtualenv -p python3 env
 source env/bin/activate
 pip install -r requirements.txt
