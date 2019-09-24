@@ -1,7 +1,6 @@
 """Factory for Vdir"""
-from .directory import Directory
 from imaplib import IMAP4
-from builtins import staticmethod
+from .directory import Directory
 
 
 class Storage:
@@ -17,6 +16,11 @@ class Storage:
         """
         folders = self.imap.folders
         return sorted([Directory(self, path) for path in folders])
+
+    #===========================================================================
+    # @property
+    # def main_directory(self):
+    #===========================================================================
 
     def directory_by_path(self, path):
         path = self.clean_folder_path(path)

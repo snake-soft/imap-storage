@@ -9,17 +9,17 @@ from imap_storage.storage.directory import Directory
 from imap_storage.storage.email.head import Head
 from imap_storage.storage.email.body import Body
 from imap_storage.storage.email.file import file_from_local, _File
+from tests.secrets import USER, PASSWORD, HOST, PORT
 print(sys.version)
-
 
 
 class CustomTestCase(TestCase):
     def setUp(self):
         config = Config()
-        config.imap.user = 'chat@hennige-it.de'
-        config.imap.password = 'testFUbla'
-        config.imap.host = 'imap.hennige-it.de'
-        config.imap.port = 993
+        config.imap.user = USER
+        config.imap.password = PASSWORD
+        config.imap.host = HOST
+        config.imap.port = PORT
         config.tag = 'PythonUnittest'
         config.directory = 'chat'
         self.config = config

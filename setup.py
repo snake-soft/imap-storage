@@ -38,7 +38,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
 
-    keywords='imap email storage data files',  # Optional
+    keywords='imap email storage data files',
 
     packages=find_packages(exclude=['imap-storage']),
 

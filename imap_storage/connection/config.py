@@ -10,7 +10,7 @@ class Config:
         self.imap = _ImapConfig()
         self.smtp = _SmtpConfig()
 
-        self.directory = 'chat'
+        self.directory = 'storage'
         self.tag = self.TAG
         self.domain = None
 
@@ -45,7 +45,7 @@ class _ImapConfig:  # pylint: disable=too-few-public-methods
         self.user = None
         self.password = None
         self.host = None
-        self.port = None
+        self.port = 993
 
     @property
     def is_ok(self):
@@ -60,7 +60,7 @@ class _SmtpConfig:  # pylint: disable=too-few-public-methods
         self.user = None
         self.password = None
         self.host = None
-        self.port = None
+        self.port = 465
 
     @property
     def is_ok(self):
