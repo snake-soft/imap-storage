@@ -1,3 +1,4 @@
+[![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/Naereen/StrapDown.js/blob/master/LICENSE)
 # imap-storage
 
 Use your Email-account as Storage for data structures and files 
