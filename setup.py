@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='imap-storage',
-    version='0.2.0beta1',
+    version='0.2.0beta2',
     description='Use your Email-account as Storage for data structures and files',
     long_description=long_description,
     long_description_content_type='text/markdown',

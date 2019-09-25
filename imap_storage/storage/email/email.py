@@ -17,9 +17,20 @@ class Email:
     def __init__(self, directory, uid):
         self.directory = directory
         self.uid = uid
+        self._subject = None
         self._head = None
         self._body = None
         self._files = None
+
+    @property
+    def subject(self):
+        if self._subject is None:
+            self.directory.fetch_subjects()
+        return self._subject
+
+    @subject.setter
+    def subject(self, subject):
+        self._subject = subject
 
     @property
     def head(self):
@@ -75,13 +86,20 @@ class Email:
         """access to the file objects, fetch if not already done"""
         if self._files is None:
             self._files = []
-            if self.uid:
-                payloads = self.directory.fetch_payloads(self)
-                for payload in payloads:
+            self.fetch_payloads()
+        return self._files
+
+    def fetch_payloads(self):
+        if self.uid is not None:
+            payloads = self.directory.fetch_payloads(self)
+            for payload in payloads:
+                try:
                     if not payload['Content-Type'].startswith(
                             'multipart/alternative;'):
-                        self._files.append(file_from_payload(self, payload))
-        return self._files
+                        self.files.append(file_from_payload(self, payload))
+                except:
+                    import pdb; pdb.set_trace()  # <---------
+        return self.files
 
 #    @files.setter
 #    def files(self, files_list):

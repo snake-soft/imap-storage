@@ -5,3 +5,4 @@
 /main.py
 *.pyc
 __pycache__
+/imap_storage.egg-info/

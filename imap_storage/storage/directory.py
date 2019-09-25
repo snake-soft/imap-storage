@@ -13,6 +13,14 @@ class Directory:
         self._uids = None
 
     @property
+    def subdirectories(self):
+        dirs = []
+        for path in self.imap.folders:
+            if path.startswith(self.path) and path != self.path:
+                dirs.append(Directory(self.storage, path))
+        return dirs
+
+    @property
     def uids(self):
         self.imap.select_folder_or_create(self.path)
         return self.imap.uids
@@ -24,8 +32,28 @@ class Directory:
         return self._emails
 
     @property
-    def appname(self):
+    def app_name(self):
         return self.path.split('.')[0]
+
+    @property
+    def item_name(self):
+        return self.path.split('.')[-1]
+
+    def email_by_uid(self, uid):
+        uid = int(uid)
+        for email in self.emails:
+            if email.uid == uid:
+                return email
+
+    def fetch_subjects(self, email=None):
+        if email:
+            uids = [email.uid]
+        else:
+            uids = self.uids
+        subjects = self.imap.get_all_subjects(folder=self.path)
+        for subject, uids in subjects.items():
+            for uid in uids:
+                self.email_by_uid(uid).subject = subject
 
     def fetch_head(self, email):
         return self.imap.get_heads(email.uid)[email.uid]

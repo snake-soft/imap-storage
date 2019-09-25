@@ -80,6 +80,7 @@ class Imap(IMAPClient):
 
     @property
     def folders(self):
+        self.connect()
         directory = self.config.directory
         folders = [folder[2] for folder in self.list_folders()
                    if folder[2].startswith(directory)]
@@ -95,15 +96,13 @@ class Imap(IMAPClient):
 
     def create_folder_recursive(self, folder):
         folder = self.clean_folder_path(folder)
-        folders = self.folders
         splitted = folder.split('.')
         for i in range(len(splitted)):
             folder_step = '.'.join(splitted[0:i+1])
-            if folder_step not in folders:
-                try:
-                    self.create_folder(folder_step)
-                except IMAP4.error:
-                    pass
+            try:
+                self.create_folder(folder_step)
+            except IMAP4.error:
+                pass
 
     def clean_folder_path(self, folder):
         folder = folder.replace('/', '.')
@@ -192,7 +191,7 @@ class Imap(IMAPClient):
         """save msg_obj to imap directory
         :returns: new uid on success or False
         """
-        result = self.append(self.config.directory, str(msg_obj))
+        result = self.append(self.current_folder, str(msg_obj))
         return int(result.decode('utf-8').split(']')[0].split()[-1])
 
     def delete_uid(self, uids):
@@ -205,6 +204,13 @@ class Imap(IMAPClient):
         self.delete_messages(uids)
         self.expunge()
         return all(uid not in self.uids for uid in uids)
+
+    # ### Overrides of IMAPClient methods: ###
+    @timer
+    def create_folder(self, folder):
+        result = IMAPClient.create_folder(self, folder)
+        self.select_folder(folder)
+        return result
 
     @timer
     def select_folder(self, folder, readonly=False):
