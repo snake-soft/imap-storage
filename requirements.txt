@@ -2,3 +2,4 @@ lxml>=4
 imapclient
 pylint
 coverage
+sphinx

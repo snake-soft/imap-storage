@@ -32,10 +32,10 @@ def file_from_local(path):
     return file
 
 
-def file_from_upload(email_obj, uploaded_file):
+def file_from_upload(uploaded_file):
     """create File object from Django uploaded file"""
     file = _File()
-    file.email = email_obj
+    #file.email = email_obj
     file.name = uploaded_file.name
     file.data = uploaded_file.read()
     file.mime = uploaded_file.content_type.split(';')[0]

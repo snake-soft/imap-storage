@@ -49,6 +49,7 @@ class Imap(IMAPClient):
         self.current_folder = None
         self.init()
         self.connect()
+        self._folders = None
 
     def connect(self):
         """Connect to Imap Server with credentials from self.config.imap"""
@@ -80,11 +81,13 @@ class Imap(IMAPClient):
 
     @property
     def folders(self):
-        self.connect()
-        directory = self.config.directory
-        folders = [folder[2] for folder in self.list_folders()
-                   if folder[2].startswith(directory)]
-        return folders
+        if self._folders is None:
+            self.connect()
+            directory = self.config.directory
+            folders = [folder[2] for folder in self.list_folders()
+                       if folder[2].startswith(directory)]
+            self._folders = folders
+        return self._folders
 
     def select_folder_or_create(self, folder):
         """
@@ -113,7 +116,7 @@ class Imap(IMAPClient):
                 )
         return folder
 
-    def get_all_subjects(self, folder=None):
+    def get_subjects(self, folder=None):
         """
         :returns: dict of subjects and uids {subject: [uid, uid]}
         """
@@ -135,6 +138,7 @@ class Imap(IMAPClient):
                 else:
                     subjects_cleaned[subject].append(uid)
         return subjects_cleaned
+    get_all_subjects = get_subjects
 
     @property
     def state(self):
@@ -207,14 +211,23 @@ class Imap(IMAPClient):
 
     # ### Overrides of IMAPClient methods: ###
     @timer
+    def list_folders(self, directory="", pattern="*"):
+        return IMAPClient.list_folders(
+            self, directory=directory, pattern=pattern
+            )
+
+    @timer
     def create_folder(self, folder):
         result = IMAPClient.create_folder(self, folder)
         self.select_folder(folder)
+        self.folders.append(folder)
         return result
 
     @timer
     def select_folder(self, folder, readonly=False):
         folder = self.clean_folder_path(folder)
+        if folder == self.current_folder:
+            return True
         response = IMAPClient.select_folder(self, folder, readonly=readonly)
         if response[b'READ-WRITE']:
             self.current_folder = folder

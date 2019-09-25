@@ -86,10 +86,10 @@ class Email:
         """access to the file objects, fetch if not already done"""
         if self._files is None:
             self._files = []
-            self.fetch_payloads()
+            self._fetch_payloads()
         return self._files
 
-    def fetch_payloads(self):
+    def _fetch_payloads(self):
         if self.uid is not None:
             payloads = self.directory.fetch_payloads(self)
             for payload in payloads:
@@ -108,7 +108,7 @@ class Email:
     @property
     def xml_files(self):
         """
-        :returns: list of files
+        :returns: list of files that are registered in xml body
         """
         files = [file_from_xml(self, file)
                  for file in self.body.get_by_tag('file')]
