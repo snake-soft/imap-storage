@@ -23,13 +23,27 @@ class Email:
         self._files = None
 
     @property
+    def path(self):
+        return self.directory.path + '/' + str(self.uid)
+
+    @property
     def subject(self):
         if self._subject is None:
             self.directory.fetch_subjects()
         return self._subject
 
+    @property
+    def name(self):
+        tag = self.directory.imap.config.tag
+        name = self.subject
+        if self.subject.startswith(tag):
+            tag = self.directory.imap.config.tag
+            name = self.subject[len(tag):].strip()
+        return name
+
     @subject.setter
     def subject(self, subject):
+        print(subject)
         self._subject = subject
 
     @property
@@ -194,7 +208,7 @@ class Email:
             child = self.add_item('file', attribs=attribs)
             file_obj.id_ = child.attrib['id']
             self.files.append(file_obj)
-            self.save()
+            #self.save()
         return file_obj in self.files
 
     def remove_file_by_attrib(self, attrib, value):

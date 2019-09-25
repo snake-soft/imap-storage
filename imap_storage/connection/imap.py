@@ -95,7 +95,9 @@ class Imap(IMAPClient):
         """
         folder = self.clean_folder_path(folder)
         self.create_folder_recursive(folder)
-        return self.select_folder(folder)
+        if self.current_folder != folder:
+            self.select_folder(folder)
+        return self.current_folder
 
     def create_folder_recursive(self, folder):
         folder = self.clean_folder_path(folder)

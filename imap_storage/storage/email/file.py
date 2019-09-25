@@ -159,9 +159,7 @@ class _File():
         from django.http.response import HttpResponse
         response = HttpResponse(self.read())
         response['Content-Type'] = self.mime
-        response['Content-Disposition'] = 'attachment;filename="{}"'.format(
-            self.name
-            )
+        response['Content-Disposition'] = 'attachment;filename="{}"'.format(self.name)
         return response
 
     @staticmethod

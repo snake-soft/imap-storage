@@ -23,13 +23,15 @@ class Directory:
         dirs = []
         for path in self.imap.folders:
             if path.startswith(self.path) and path != self.path:
-                dirs.append(Directory(self.storage, path))
+                dirs.append(self.storage.directory_by_path(path))
         return dirs
 
     @property
     def uids(self):
-        self.imap.select_folder_or_create(self.path)
-        return self.imap.uids
+        if self._uids is None:
+            self.imap.select_folder_or_create(self.path)
+            self._uids = self.imap.uids
+        return self._uids
 
     @property
     def emails(self):
@@ -55,7 +57,8 @@ class Directory:
     def add_file_email(self, file):
         """Create new Email with one file"""
         email = self.new_email(file.name)
-        
+        email.add_file(file)
+        email.save()
 
     def new_email(self, item_name, from_addr=None, from_displ=None):
         """needs to be runned if its a ne Email with no uid"""
@@ -75,7 +78,7 @@ class Directory:
             to_addr_obj
             )
         email.body = email.new_body()
-        email.save()
+        # email.save()
         self.emails.append(email)
         return email
 
