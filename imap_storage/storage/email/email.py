@@ -35,6 +35,8 @@ class Email:
     @property
     def name(self):
         tag = self.directory.imap.config.tag
+        if not tag:
+            raise AttributeError
         name = self.subject
         if self.subject.startswith(tag):
             tag = self.directory.imap.config.tag

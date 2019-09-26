@@ -150,7 +150,12 @@ class _File():
 
     def read(self):
         """Read the data of the object"""
-        return self.data
+        from base64 import decodestring
+        maintype, subtype = self.mime.split('/')
+        if maintype != 'text' and isinstance(self.data, str):
+            return decodestring(self.data.encode())
+        else:
+            return self.data
 
     def as_response(self):
         """

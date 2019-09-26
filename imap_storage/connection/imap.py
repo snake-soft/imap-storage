@@ -110,7 +110,7 @@ class Imap(IMAPClient):
                 pass
 
     def clean_folder_path(self, folder):
-        folder = folder.replace('/', '.')
+        folder = folder.replace('/', '.').strip('.')
         if not folder.startswith(self.config.directory):
             folder = '{}.{}'.format(
                 self.config.directory,
