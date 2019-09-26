@@ -15,8 +15,13 @@ class Directory:
 
     @property
     def parent(self):
-        import pdb; pdb.set_trace()  # <---------
-        return self.storage.directory_by_path(self.path)
+        splitted = self.path.split('.')
+        if len(splitted) > 1:
+            path = '.'.join(splitted[:-1])
+            directory = self.storage.directory_by_path(path)
+        else:
+            directory = None
+        return directory
 
     @property
     def childs(self):
@@ -25,6 +30,15 @@ class Directory:
             if path.startswith(self.path) and path != self.path:
                 dirs.append(self.storage.directory_by_path(path))
         return dirs
+
+    @property
+    def breadcrumbs(self):
+        breadcrumbs = []
+        directory_iter = self
+        while directory_iter.parent:
+            directory_iter = directory_iter.parent
+            breadcrumbs.append(directory_iter)
+        return sorted(breadcrumbs)
 
     @property
     def uids(self):
@@ -47,6 +61,15 @@ class Directory:
     @property
     def item_name(self):
         return self.path.split('.')[-1]
+
+    @property
+    def url(self):
+        directory = self.imap.config.directory
+        if self.path.startswith(directory):
+            url = self.path[len(directory)+1:]
+        else:
+            url = self.path
+        return url.replace('.', '/')
 
     def email_by_uid(self, uid):
         uid = int(uid)

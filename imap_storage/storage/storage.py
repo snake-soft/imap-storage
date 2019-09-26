@@ -25,7 +25,6 @@ class Storage:
         for directory in self.directories:
             if directory.path == path:
                 return directory
-        import pdb; pdb.set_trace()  # <---------
         return None
 
     def new_directory(self, path):
