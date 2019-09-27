@@ -16,7 +16,7 @@ These instructions will get you a copy of the project up and running on your loc
 ### Prerequisites
 
 python3.5 or later.
-It should work with all versions of Python3 but tests are running on 3.5.3 and 3.7.4 now.
+It should work Python3.4+ but tests are running on 3.5.3 and 3.7.4 now.
 
 This project makes use of the following libraries:
 ```
