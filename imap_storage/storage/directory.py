@@ -56,7 +56,7 @@ class Directory:
     @property
     def app_name(self):
         splitted = self.path.split('.')
-        return splitted[1] if len(splitted) > 1 else ''
+        return splitted[1] if len(splitted) > 1 else splitted[0]
 
     @property
     def item_name(self):

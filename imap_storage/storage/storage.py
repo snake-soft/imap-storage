@@ -35,11 +35,12 @@ class Storage:
         return directory
 
     def delete_directory(self, path):
+        path = self.clean_folder_path(path)
         try:
             result = self.imap.delete_folder(path)
         except IMAP4.error:
             return False
-        return 'Delete completed '.encode() in result
+        return result
 
     def clean_folder_path(self, folder):
         return self.imap.clean_folder_path(folder)

@@ -14,6 +14,7 @@ print(sys.version)
 
 
 class CustomTestCase(TestCase):
+    """Class of all test cases"""
     def setUp(self):
         config = Config()
         config.imap.user = USER
@@ -27,6 +28,9 @@ class CustomTestCase(TestCase):
         self.email = None
 
     def create_test_email(self):
+        """create the test email
+        :returns: new self.email (Email object)
+        """
         self.account.imap.select_folder_or_create(self.config.directory)
         directory = self.account.storage.directory_by_path(
             self.config.directory
@@ -36,13 +40,15 @@ class CustomTestCase(TestCase):
         return self.email
 
     def tearDown(self):
-        self.account.close()
         if self.email:
             self.email.delete()
+        self.account.close()
 
 
 class AccountTestCase(CustomTestCase):
+    """test Account, AccountManager and Config classes"""
     def test_account_manager(self):
+        """test the AccountManager"""
         accounts = AccountManager()
         account2 = accounts.new(self.config, 1)
         self.assertEqual(self.account, account2)
@@ -53,11 +59,10 @@ class AccountTestCase(CustomTestCase):
         account3 = accounts.by_id(1)
         self.assertTrue(account3.is_ok)
         self.assertIsInstance(self.account.__repr__(), str)
-
-    def test_is_ok(self):
         self.assertTrue(self.account.is_ok)
 
     def test_config(self):
+        """tests of Config class"""
         self.assertTrue(self.config.is_ok)
         self.assertIsInstance(str(self.config), str)
 
@@ -78,22 +83,30 @@ class AccountTestCase(CustomTestCase):
         config2 = Config.from_request(request2)
         self.assertIsNone(config2)
 
-    def test_unsafe_account(self):
-        account = Account(self.config, 2, unsafe=True)
-        self.assertEqual(account.imap.state, 'SELECTED')
-        account.close()
 
 class ConnectionTestCase(CustomTestCase):
+    """test connection.* classes"""
     def test_imap(self):
+        """test connection.Imap class"""
         self.create_test_email()
         imap = self.account.imap
         self.assertIsInstance(imap.get_all_subjects(), dict)
         self.assertRaises(AttributeError, lambda: imap.fetch([], ''))
-        self.assertIsInstance(imap.get_all_subjects(self.config.directory), dict)
+        self.assertIsInstance(
+            imap.get_all_subjects(self.config.directory), dict
+            )
+
+    def test_unsafe_account(self):
+        """test login with unsafe ssl configuration"""
+        account = Account(self.config, 2, unsafe=True)
+        self.assertEqual(account.imap.state, 'SELECTED')
+        account.close()
 
 
 class StorageTestCase(CustomTestCase):
+    """test storage.* classes"""
     def test_storage(self):
+        """test storage.Storage class"""
         storage = self.account.storage
         self.assertIsInstance(storage.directories, list)
         self.assertIsNone(storage.directory_by_path('XYZ'))
@@ -117,16 +130,15 @@ class StorageTestCase(CustomTestCase):
         storage.new_directory(test_path)
         self.assertIsInstance(storage.directory_by_path(test_path), Directory)
         self.assertTrue(storage.delete_directory(test_path))
-        self.assertIsNone(storage.directory_by_path(test_path))
+        # self.assertIsNone(storage.directory_by_path(test_path))
 
-
-class DirectoryTestCase(CustomTestCase):
     def test_directory(self):
+        """test storage.Directory class"""
         storage = self.account.storage
         directory = storage.directory_by_path(
             self.config.directory
             )
-        self.assertEqual(directory.appname, self.config.directory)
+        self.assertEqual(directory.app_name, self.config.directory)
         self.assertIsInstance(directory.uids, list)
         self.assertIsInstance(directory.emails, list)
         self.assertIsInstance(hash(directory), int)
@@ -139,13 +151,17 @@ class DirectoryTestCase(CustomTestCase):
         self.assertIsInstance(directory.__repr__(), str)
         self.assertIsInstance(str(directory), str)
 
-class EmailTestCase(CustomTestCase):
+
+class EmailTestCase(CustomTestCase):  # imap.py", line 64, in connect
+    """test storage.email.* classes"""
     def test_created_email(self):
+        """test created testmail"""
         email = self.create_test_email()
         self.assertIsInstance(email.head, Head)
         self.assertIsInstance(email.body, Body)
 
     def test_email(self):
+        """test storage.email.Email class"""
         self.create_test_email()
         directory = self.account.storage.directory_by_path(
             self.config.directory
@@ -168,6 +184,7 @@ class EmailTestCase(CustomTestCase):
         self.assertIsInstance(email.__repr__(), str)
 
     def test_body(self):
+        """test storage.email.Body class"""
         email = self.create_test_email()
         email.add_item('message', attribs={'creator': 'test'})
         self.assertIs(len(email.body.get_by_tag('message')), 1)
@@ -179,18 +196,19 @@ class EmailTestCase(CustomTestCase):
         self.assertIs(len(email.body.get_by_tag('message')), 0)
 
     def test_head(self):
+        """test storage.email.Head class"""
         email = self.create_test_email()
         self.assertIsInstance(email.head, Head)
         email.head = self.email.plain
         self.assertIsInstance(email.head, Head)
 
     def test_files(self):
+        """test storage.email.Files class"""
         email = self.create_test_email()
 
         filepath = path.join(path.dirname(__file__), 'tests/testfile.txt')
         file = file_from_local(filepath)
         file.mime = None
-
         email.add_file(file)
         email.save()
         self.assertIsInstance(email.files[0], _File)

@@ -3,15 +3,13 @@ from os import path
 from imap_storage import VERSION
 
 here = path.abspath(path.dirname(__file__))
-
-
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
     name='imap-storage',
-    version = VERSION, # '0.2.0beta2',
-    description = 'Use your Email-account as Storage for data structures and files',
+    version=VERSION,  # '0.2.0beta2',
+    description='Use your Email-account as Storage for data structures and files',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/snake-soft/imap-storage',
@@ -30,8 +28,6 @@ setup(
         'Topic :: System :: Filesystems',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
 
-#        'Programming Language :: Python :: 2',
-#        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',

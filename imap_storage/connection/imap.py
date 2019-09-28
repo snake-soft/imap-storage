@@ -1,34 +1,11 @@
 """Imap connection class"""
 import sys
 from builtins import ConnectionResetError, BrokenPipeError
+from email import message_from_bytes
 from imaplib import IMAP4
 from imapclient import IMAPClient, exceptions
-from email import message_from_bytes
+from imap_storage.tools import timer
 __all__ = ['Imap', 'timer']
-
-
-def timer(func):
-    """@timer decorator
-    :TODO: option to shorten args at output
-    """
-    from functools import wraps
-    from time import time
-
-    @wraps(func)  # sets return meta to func meta
-    def wrapper(*args, **kwargs):
-        start = time()
-        ret = func(*args, **kwargs)
-        dur = format((time() - start) * 1000, ".2f")
-        arg_str = ', '.join([str(arg) for arg in args]
-                            + [str(k) + "=" + str(v)
-                               for k, v in kwargs.items()])
-        #=======================================================================
-        # if sys.argv[0] != 'mod_wsgi':
-        #     if len(sys.argv) >=2 and sys.argv[1] != 'test' or sys.argv[0]=='main.py':
-        #=======================================================================
-        print('%s(%s) -> %sms.' % (func.__name__, arg_str, dur))
-        return ret
-    return wrapper
 
 
 class Imap(IMAPClient):
@@ -73,14 +50,16 @@ class Imap(IMAPClient):
             self.connect()
 
     def init(self):
-        super().__init__(
-            self.config.imap.host,
-            port=self.config.imap.port,
-            ssl_context=self.ssl_context or None,
-            )
+        host = self.config.imap.host
+        port = self.config.imap.port
+        ssl_context = self.ssl_context or None
+        if hasattr(self, '_imap'):
+            self.logout()
+        super().__init__(host, port=port, ssl_context=ssl_context)
 
     @property
     def folders(self):
+        self._folders = None  # reload every time
         if self._folders is None:
             self.connect()
             directory = self.config.directory
@@ -257,7 +236,11 @@ class Imap(IMAPClient):
     @timer
     def delete_folder(self, folder):
         folder = self.clean_folder_path(folder)
-        return IMAPClient.delete_folder(self, folder)
+        response = False
+        if folder in self.folders:
+            response = IMAPClient.delete_folder(self, folder)
+            response = 'Delete completed'.encode() in response
+        return response
 
     @timer
     def delete_messages(self, messages, silent=False):

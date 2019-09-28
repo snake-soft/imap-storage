@@ -45,7 +45,6 @@ class Email:
 
     @subject.setter
     def subject(self, subject):
-        print(subject)
         self._subject = subject
 
     @property
