@@ -101,7 +101,6 @@ class LogEntry:
             elif sys.argv[1] == 'runserver':
                 mode = 'django'
         if not mode:
-            import pdb; pdb.set_trace()  # <---------
             raise AttributeError('No mode found')
         return mode
 
