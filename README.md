@@ -45,6 +45,8 @@ account = Account(config, 1)
 directory = account.storage.directory_by_path(account.config.directory)
 email = directory.new_email('Your_first_item')
 email.add_item('TestMessage', text='Your first message')
+email.save()
+email.delete()
 ```
 
 
