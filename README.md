@@ -49,6 +49,8 @@ email.add_item('TestMessage', text='Your first message')
 
 
 ## Running the tests
+Rename 'secrets.sample.py' in tests directory to 'secrets.py' and include your e-mail account for testing.
+Then run this inside root directory:
 ```
 python -m unittest
 ```
