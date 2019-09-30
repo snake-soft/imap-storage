@@ -235,15 +235,12 @@ class Email:
         old_uid = self.uid or False
         self.uid = int(imap.save_message(self.plain))
         if old_uid:
-            imap.delete_uid(old_uid)
+            imap.delete_messages(old_uid)
         self._files = None
         return self.uid
 
     def delete(self):
-        result = self.directory.delete_email(self)
-        if result is True:
-            self.uid = None
-        return result
+        return self.directory.delete_email(self)
 
     def __hash__(self):
         return hash((self.uid))

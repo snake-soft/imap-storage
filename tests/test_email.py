@@ -103,3 +103,5 @@ class EmailTestCase(CustomTestCase):  # imap.py", line 64, in connect
         self.assertIsInstance(email.plain, str)
         self.assertIsInstance(email.file_by_id(file5.id_), _File)
         self.assertIsInstance(email.file_by_name('binary'), _File)
+        for file in ['audio.mp3', 'binary', 'image.png', 'text.txt']:
+            pass

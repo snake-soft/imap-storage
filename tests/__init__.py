@@ -17,20 +17,20 @@ class CustomTestCase(TestCase):
         config.imap.host = HOST
         config.imap.port = PORT
         config.tag = 'PythonUnittest'
-        config.directory = 'chat'
+        config.directory = 'test_directory'
         self.config = config
         self.account = imap_storage.Account(config, 1)
         self.email = None
+        self.directory = self.account.storage.directory_by_path(
+            self.config.directory
+            )
 
     def create_test_email(self):
         """create the test email
         :returns: new self.email (Email object)
         """
-        self.account.imap.select_folder_or_create(self.config.directory)
-        directory = self.account.storage.directory_by_path(
-            self.config.directory
-            )
-        self.email = directory.new_email('Testobject')
+        self.account.imap.create_folder(self.config.directory)
+        self.email = self.directory.new_email('Testobject')
         self.email.save()
         return self.email
 

@@ -8,7 +8,7 @@ class Directory:
         self.storage = storage
         self.imap = storage.imap
         if ' ' in folder:
-            raise AttributeError('Directory path should not contain spaces')
+            folder = folder.replace(' ', '_')
         self.folder = folder
         self.path = folder
         self._emails = None
@@ -46,8 +46,8 @@ class Directory:
     def uids(self):
         """keep this uptodate because self.emails compares to it"""
         if self._uids is None or True:  # ever refreshing
-            self.imap.select_folder_or_create(self.path)
-            self._uids = self.imap.uids
+            self.imap.create_folder(self.path)
+            self._uids = self.imap.search()
         return self._uids
 
     @property
@@ -56,10 +56,10 @@ class Directory:
         if self._emails is None:
             self._emails = [Email(self, uid) for uid in self.uids]
         else:
-            email_uids = [email.uid for email in self._emails]
+            email_uids = [email.uid for email in self._emails if email.uid]
             rem, add = list_compare(email_uids, self.uids)
             for uid in rem:
-                self._emails.remove(self.email_by_uid(uid))
+                self._emails.remove(Email(self, uid))
             for uid in add:
                 self._emails.append(Email(self, uid))
         return self._emails
@@ -127,7 +127,7 @@ class Directory:
             uid = email_uid_or_obj.uid
         else:
             uid = email_uid_or_obj
-        result = self.imap.delete_uid([uid])  # immer true :-(
+        result = self.imap.delete_messages([uid])  # immer true :-(
         return result
 
     def delete(self):
@@ -139,22 +139,23 @@ class Directory:
             uids = [email.uid]
         else:
             uids = self.uids
-        subjects = self.imap.get_all_subjects(folder=self.path)
+        subjects = self.storage.get_subjects(folder=self.path)
         for subject, uids in subjects.items():
             for uid in uids:
                 self.email_by_uid(uid).subject = subject
+        return subjects
 
     def fetch_head(self, email):
-        return self.imap.get_heads(email.uid)[email.uid]
+        return self.storage.get_heads(email.uid)[email.uid]
 
     def fetch_body(self, email):
-        return self.imap.get_bodies(email.uid)[email.uid]
+        return self.storage.get_bodies(email.uid)[email.uid]
 
     def fetch_payloads(self, email):
         """
         :returns: payloads as string
         """
-        return self.imap.get_file_payloads(email.uid)[email.uid]
+        return self.storage.get_file_payloads(email.uid)[email.uid]
 
     def __hash__(self):
         return hash(self.path)
