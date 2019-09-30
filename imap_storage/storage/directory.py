@@ -46,7 +46,7 @@ class Directory:
     def uids(self):
         """keep this uptodate because self.emails compares to it"""
         if self._uids is None or True:  # ever refreshing
-            self.imap.select_folder(self.path)
+            self.imap.select_folder_or_create(self.path)
             self._uids = self.imap.uids
         return self._uids
 

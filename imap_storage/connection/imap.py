@@ -230,6 +230,13 @@ class Imap(IMAPClient):
             self.current_folder = folder
         return response[b'READ-WRITE']
 
+    def logout(self):
+        try:
+            result = IMAPClient.logout(self)
+        except (IMAP4.error, OSError):  # oserror is maybe true (already out)
+            result = False
+        return result
+
     @timer
     def search(self, criteria='ALL', charset=None):
         self.connect()

@@ -47,6 +47,7 @@ email = directory.new_email('Your_first_item')
 email.add_item('TestMessage', text='Your first message')
 email.save()
 email.delete()
+account.close()
 ```
 
 
@@ -54,7 +55,12 @@ email.delete()
 Rename 'secrets.sample.py' in tests directory to 'secrets.py' and include your e-mail account for testing.
 Then run this inside root directory:
 ```
-python -m unittest
+python -m unittest  # tests all
+python -m unittest tests.test_account  # tests only account
+```
+or run it with coverage:
+```
+coverage run --source='imap_storage' -m unittest && coverage report -m --skip-covered
 ```
 
 ### And coding style tests
