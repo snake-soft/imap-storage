@@ -50,13 +50,7 @@ email.add_item('TestMessage', text='Your first message')
 
 ## Running the tests
 ```
-git clone https://github.com/snake-soft/imap-storage.git
-cd imap-storage
-virtualenv -p python3 env
-source env/bin/activate
-pip install -r requirements.txt
-# > First fill the data of your testserver in 'tests/secrets.py'
-python -m coverage run --source='imap_storage' run_tests.py && coverage report -m --skip-covered
+python -m unittest
 ```
 
 ### And coding style tests
