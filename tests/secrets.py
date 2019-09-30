@@ -1,4 +1,0 @@
-USER = ''
-PASSWORD = ''
-HOST = ''
-PORT = 993

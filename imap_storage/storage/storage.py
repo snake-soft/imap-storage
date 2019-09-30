@@ -15,9 +15,12 @@ class Storage:
         :param path: relative to the base path from self.imap.config.directory
         :returns: list of Directory objects
         """
+        # self._directories = None  # Never cache
         if self._directories is None:
             folders = self.imap.folders
-            self._directories = sorted([Directory(self, path) for path in folders])
+            self._directories = sorted(
+                [Directory(self, path) for path in folders]
+                )
         return self._directories
 
     def directory_by_path(self, path):
@@ -38,6 +41,8 @@ class Storage:
         path = self.clean_folder_path(path)
         try:
             result = self.imap.delete_folder(path)
+            if result:
+                self.directories.remove(self.directory_by_path(path))
         except IMAP4.error:
             return False
         return result

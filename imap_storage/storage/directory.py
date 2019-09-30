@@ -1,5 +1,6 @@
 from .email.email import Email
 from .email.address import Address
+from ..tools.compare import list_compare
 
 
 class Directory:
@@ -26,7 +27,8 @@ class Directory:
     @property
     def childs(self):
         dirs = []
-        for path in self.imap.folders:
+        for directory in self.storage.directories:
+            path = directory.path
             if path.startswith(self.path) and path != self.path:
                 dirs.append(self.storage.directory_by_path(path))
         return dirs
@@ -42,15 +44,24 @@ class Directory:
 
     @property
     def uids(self):
-        if self._uids is None:
-            self.imap.select_folder_or_create(self.path)
+        """keep this uptodate because self.emails compares to it"""
+        if self._uids is None or True:  # ever refreshing
+            self.imap.select_folder(self.path)
             self._uids = self.imap.uids
         return self._uids
 
     @property
     def emails(self):
+        """cannot be dynamic because of self.fetch methods"""
         if self._emails is None:
             self._emails = [Email(self, uid) for uid in self.uids]
+        else:
+            email_uids = [email.uid for email in self._emails]
+            rem, add = list_compare(email_uids, self.uids)
+            for uid in rem:
+                self._emails.remove(self.email_by_uid(uid))
+            for uid in add:
+                self._emails.append(Email(self, uid))
         return self._emails
 
     @property
@@ -64,12 +75,16 @@ class Directory:
 
     @property
     def url(self):
+        """makes the Django life easier"""
         directory = self.imap.config.directory
         if self.path.startswith(directory):
             url = self.path[len(directory)+1:]
         else:
             url = self.path
         return url.replace('.', '/')
+
+    def refresh(self):
+        self._uids = None
 
     def email_by_uid(self, uid):
         uid = int(uid)
@@ -82,6 +97,8 @@ class Directory:
         email = self.new_email(file.name)
         email.add_file(file)
         email.save()
+        self.refresh()
+        return self.email_by_uid(email.uid)
 
     def new_email(self, item_name, from_addr=None, from_displ=None):
         """needs to be runned if its a ne Email with no uid"""
@@ -102,7 +119,7 @@ class Directory:
             )
         email.body = email.new_body()
         # email.save()
-        self.emails.append(email)
+        self.refresh()
         return email
 
     def delete_email(self, email_uid_or_obj):
@@ -111,8 +128,10 @@ class Directory:
         else:
             uid = email_uid_or_obj
         result = self.imap.delete_uid([uid])  # immer true :-(
-        self.emails.remove(Email(self, uid))
         return result
+
+    def delete(self):
+        return self.storage.delete_directory(self.path)
 
     # ### Fetch methods ###
     def fetch_subjects(self, email=None):
@@ -135,10 +154,7 @@ class Directory:
         """
         :returns: payloads as string
         """
-        try:
-            return self.imap.get_file_payloads(email.uid)[email.uid]
-        except:
-            import pdb; pdb.set_trace()  # <---------
+        return self.imap.get_file_payloads(email.uid)[email.uid]
 
     def __hash__(self):
         return hash(self.path)

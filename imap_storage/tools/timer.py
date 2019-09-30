@@ -16,16 +16,16 @@ def timer(func):
         start = time()
         result = func(*args, **kwargs)
         duration = format((time() - start) * 1000, ".2f")
-        log = LogEntry(func, duration, *args, **kwargs)
+        log = LogEntry(func, duration, result, *args, **kwargs)
         mode = log.choose_mode()
         if mode == 'test':
-            logging.info(log.long)
+            logging.info(log.long(with_result=True))
 
         elif mode == 'wsgi':
-            logging.info(log.short)
+            logging.info(log.short(with_result=False))
 
         elif mode in ('django', 'main'):
-            print(log.short)
+            print(log.long(with_result=True))
 
         return result
     return wrapper
@@ -34,19 +34,18 @@ def timer(func):
 class LogEntry:
     MODES = ('test', 'wsgi', 'main', 'django')
 
-    def __init__(self, func, duration, *args, **kwargs):
+    def __init__(self, func, duration, result, *args, **kwargs):
         self._func = func
+        self._duration = duration
+        self.result = result
         self._args = args
         self._kwargs = kwargs
-        self._duration = duration
 
-    @property
-    def short(self):
-        return self.to_string(short=True)
+    def short(self, with_result=False):
+        return self.to_string(short=True, with_result=with_result)
 
-    @property
-    def long(self):
-        return self.to_string(short=False)
+    def long(self, with_result=False):
+        return self.to_string(short=False, with_result=with_result)
 
     @property
     def args(self):
@@ -74,14 +73,19 @@ class LogEntry:
         return ['{}={}'.format(str(key), str(value))
                 for key, value in self._kwargs.items()]
 
-    def to_string(self, short=False):
+    def to_string(self, short=False, with_result=False):
         args_and_kwargs_str = ', '.join(
                 self.args +
                 self.kwargs_short if short else self.kwargs_long,
             )
-        return '{}({}) -> {}ms.'.format(
+        result_string = '{}({}) -> {}ms.'.format(
                 self._func.__name__, args_and_kwargs_str, self._duration
             )
+        if with_result:
+            result_string += '  >>> {} <<<'.format(
+                self.shorten_string(str(self.result)) if short else self.result,
+                )
+        return result_string
 
     @staticmethod
     def choose_mode():
@@ -93,7 +97,7 @@ class LogEntry:
             mode = 'wsgi'
         elif sys.argv[0] == 'main.py':
             mode = 'main'
-        elif sys.argv[0] == 'run_tests.py':
+        elif sys.argv[0] == 'run_tests.py' or 'unittest' in sys.argv[0]:
             mode = 'test'
         elif len(sys.argv) >= 2:
             if sys.argv[1] == 'test':  # needed?

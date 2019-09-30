@@ -38,6 +38,8 @@ class Email:
         if not tag:
             raise AttributeError
         name = self.subject
+        if not self.subject:
+            raise AttributeError("What is the problem here?")
         if self.subject.startswith(tag):
             tag = self.directory.imap.config.tag
             name = self.subject[len(tag):].strip()
@@ -108,12 +110,9 @@ class Email:
         if self.uid is not None:
             payloads = self.directory.fetch_payloads(self)
             for payload in payloads:
-                try:
-                    if not payload['Content-Type'].startswith(
-                            'multipart/alternative;'):
-                        self.files.append(file_from_payload(self, payload))
-                except:
-                    import pdb; pdb.set_trace()  # <---------
+                if not payload['Content-Type'].startswith(
+                        'multipart/alternative;'):
+                    self.files.append(file_from_payload(self, payload))
         return self.files
 
 #    @files.setter

@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
+from base64 import decodebytes
 """:TODO: constructor functions are in wrong place"""
 
 
@@ -132,7 +133,7 @@ class _File():
         if maintype == 'text':
             try:
                 msg = MIMEText(str(self.read(), 'utf-8'), _subtype=subtype)
-            except TypeError:
+            except (TypeError, UnicodeDecodeError):
                 msg = MIMEText(str(self.read()), _subtype=subtype)
         elif maintype == 'image':
             msg = MIMEImage(self.read(), _subtype=subtype)
@@ -154,7 +155,7 @@ class _File():
         from base64 import decodestring
         maintype, subtype = self.mime.split('/') if self.mime else '', ''
         if maintype != 'text' and isinstance(self.data, str):
-            return decodestring(self.data.encode())
+            return decodebytes(self.data.encode())
         else:
             return self.data
 

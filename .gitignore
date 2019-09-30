@@ -7,3 +7,4 @@
 __pycache__
 /imap_storage.egg-info/
 *.log
+/tests/secrets.py

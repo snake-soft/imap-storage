@@ -1,6 +1,5 @@
 """Imap connection class"""
-import sys
-from builtins import ConnectionResetError, BrokenPipeError
+from builtins import ConnectionResetError
 from email import message_from_bytes
 from imaplib import IMAP4
 from imapclient import IMAPClient, exceptions
@@ -28,34 +27,45 @@ class Imap(IMAPClient):
         self.connect()
         self._folders = None
 
-    def connect(self):
-        """Connect to Imap Server with credentials from self.config.imap"""
-        possible_errors = (
-                ConnectionResetError,
-                AttributeError,
-                BrokenPipeError,
-                IMAP4.abort,
-                )
-        try:
-            self.noop()
-            if self.state == 'NONAUTH':
-                self.login(self.config.imap.user, self.config.imap.password)
-            if self.state == 'AUTH':
-                self.select_folder_or_create(self.config.directory)
-            if self.state != 'SELECTED':
-                raise exceptions.LoginError('Unable to connect')
-
-        except (ConnectionResetError, BrokenPipeError, IMAP4.abort):
-            self.init()
-            self.connect()
-
     def init(self):
+        """initialize or reinitialize imap connection"""
         host = self.config.imap.host
         port = self.config.imap.port
         ssl_context = self.ssl_context or None
         if hasattr(self, '_imap'):
-            self.logout()
+            try:
+                self.logout()
+            except OSError:
+                pass
         super().__init__(host, port=port, ssl_context=ssl_context)
+
+    def connect(self):
+        """Connect to Imap Server with credentials from self.config.imap"""
+        # (ConnectionResetError, AttributeError, BrokenPipeError, IMAP4.abort,)
+        if not self.is_ok:
+            self.init()
+
+        if self.state == 'NONAUTH':
+            self.login(self.config.imap.user, self.config.imap.password)
+        if self.state == 'AUTH':
+            self.select_folder_or_create(self.config.directory)
+        if self.state != 'SELECTED':
+            raise exceptions.LoginError('Unable to connect')
+
+    @property
+    def is_ok(self):
+        socket = self._imap.socket()
+        try:
+            socket.getpeername()
+        except OSError:
+            return False
+
+        try:
+            self.noop()
+        except IMAP4.abort:
+            return False
+
+        return True
 
     @property
     def folders(self):
@@ -87,6 +97,8 @@ class Imap(IMAPClient):
                 self.create_folder(folder_step)
             except IMAP4.error:
                 pass
+            except ConnectionResetError:
+                import pdb; pdb.set_trace()  # <---------
 
     def clean_folder_path(self, folder):
         folder = folder.replace('/', '.').strip('.')
@@ -182,7 +194,7 @@ class Imap(IMAPClient):
     def delete_uid(self, uids):
         """delete message on the server
         :param uid: message uid to delete
-        :returns: bool
+        :returns: bool if uids are not in self.uids anymore
         """
         if isinstance(uids, (str, float, int)):
             uids = [int(uids)]
@@ -205,11 +217,15 @@ class Imap(IMAPClient):
         return result
 
     @timer
-    def select_folder(self, folder, readonly=False):
+    def select_folder(self, folder):
         folder = self.clean_folder_path(folder)
         if folder == self.current_folder:
             return True
-        response = IMAPClient.select_folder(self, folder, readonly=readonly)
+        try:
+            response = IMAPClient.select_folder(self, folder)
+        except IMAP4.abort:
+            self.connect()
+            response = IMAPClient.select_folder(self, folder)
         if response[b'READ-WRITE']:
             self.current_folder = folder
         return response[b'READ-WRITE']
