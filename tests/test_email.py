@@ -86,15 +86,15 @@ class EmailTestCase(CustomTestCase):  # imap.py", line 64, in connect
         self.assertEqual(file.human_readable_size(2**80), '1.0YiB')
 
         file3 = file_from_local(
-            path.join(path.dirname(__file__), 'tests/testfile.mp3')
+            path.join(path.dirname(__file__), 'files/audio.mp3')
             )
         email.add_file(file3)
         file4 = file_from_local(
-            path.join(path.dirname(__file__), 'tests/testfile.png')
+            path.join(path.dirname(__file__), 'files/image.png')
             )
         email.add_file(file4)
         file5 = file_from_local(
-            path.join(path.dirname(__file__), 'tests/testfile')
+            path.join(path.dirname(__file__), 'files/binary')
             )
         file5.mime = None
         email.add_file(file5)
@@ -102,4 +102,4 @@ class EmailTestCase(CustomTestCase):  # imap.py", line 64, in connect
         self.assertIsInstance(str(file5), str)
         self.assertIsInstance(email.plain, str)
         self.assertIsInstance(email.file_by_id(file5.id_), _File)
-        self.assertIsInstance(email.file_by_name('testfile'), _File)
+        self.assertIsInstance(email.file_by_name('binary'), _File)

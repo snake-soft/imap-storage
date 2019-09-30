@@ -240,7 +240,10 @@ class Email:
         return self.uid
 
     def delete(self):
-        self.directory.delete_email(self)
+        result = self.directory.delete_email(self)
+        if result is True:
+            self.uid = None
+        return result
 
     def __hash__(self):
         return hash((self.uid))

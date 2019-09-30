@@ -1,6 +1,11 @@
 from unittest import TestCase
 import imap_storage
-from tests.secrets import USER, PASSWORD, HOST, PORT
+try:
+    from tests.secrets import USER, PASSWORD, HOST, PORT
+except ModuleNotFoundError:
+    raise(AttributeError(
+        'No /tests/secrets.py found. Use /tests/secrets.sample.py'
+        ))
 
 
 class CustomTestCase(TestCase):
