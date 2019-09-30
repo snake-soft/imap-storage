@@ -1,3 +1,4 @@
+gitpython
 lxml>=4
 imapclient
 pylint
