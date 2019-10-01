@@ -47,7 +47,7 @@ class Storage:
         return result
 
     def clean_folder_path(self, folder):
-        folder = folder.replace('/', '.').strip('.')
+        folder = folder.replace('/', '.').replace(' ', '_').strip('.')
         if not folder.startswith(self.imap.config.directory):
             folder = '{}.{}'.format(
                 self.imap.config.directory,

@@ -31,6 +31,7 @@ class ConnectionTestCase(CustomTestCase):
 
         file = file_from_local('tests/files/text.txt')
         file_email = parent_dir.add_file_email(file)
+        self.assertIn(file, parent_dir.files)
 
         self.assertIsInstance(parent_dir.fetch_subjects(), dict)
         self.assertIsInstance(parent_dir.fetch_subjects(file_email), dict)
@@ -57,7 +58,7 @@ class ConnectionTestCase(CustomTestCase):
         self.assertIn(email, parent_dir.emails)
         parent_dir.delete_email(email.uid)
         self.assertNotIn(email, parent_dir.emails)
-        
+
         email2 = self.create_test_email()
         self.assertTrue(parent_dir != child_dir)
         self.assertIsInstance(child_dir.__repr__(), str)

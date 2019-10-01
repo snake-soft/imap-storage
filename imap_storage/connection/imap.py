@@ -144,6 +144,7 @@ class Imap(IMAPClient):
         criteria could also be 'ALL'
         :returns: All Message [ids] with *self.config.tag* in subject
         """
+        self.connect()
         criteria = criteria or ['SUBJECT', self.config.tag]
         # self.connect()
         ret = IMAPClient.search(self, criteria=criteria, charset=charset)
@@ -151,20 +152,21 @@ class Imap(IMAPClient):
 
     @timer
     def fetch(self, messages, data, modifiers=None):
-        #self.connect()
+        self.connect()
         if not messages:
             raise AttributeError('No message uids')
         return IMAPClient.fetch(self, messages, data, modifiers=modifiers)
 
     @timer
     def append(self, folder, msg, flags=(), msg_time=None):
-        #self.connect()
+        self.connect()
         return IMAPClient.append(
             self, folder, msg, flags=flags, msg_time=msg_time
             )
 
     @timer
     def delete_folder(self, folder):
+        self.connect()
         folder = self.clean_folder_path(folder)
         response = False
         if folder in self.list_folders() and folder != self.config.directory:
@@ -188,6 +190,7 @@ class Imap(IMAPClient):
 
     @timer
     def expunge(self, messages=None):
+        self.connect()
         return IMAPClient.expunge(self, messages=messages)
 
     def __str__(self):

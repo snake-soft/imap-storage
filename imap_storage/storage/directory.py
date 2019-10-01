@@ -65,6 +65,14 @@ class Directory:
         return self._emails
 
     @property
+    def files(self):
+        files = []
+        for email in self.emails:
+            for file in email.files:
+                files.append(file)
+        return files
+
+    @property
     def app_name(self):
         splitted = self.path.split('.')
         return splitted[1] if len(splitted) > 1 else splitted[0]
