@@ -42,8 +42,10 @@ class Storage:
         # socket error: [Errno 32] Broken pipe
         path = self.clean_folder_path(path)
         result = self.imap.delete_folder(path)
-        if result and self.directories:
-            self._directories.remove(self.directory_by_path(path))
+        for folder in result:
+            directory = self.directory_by_path(folder)
+            if directory:
+                self.directories.remove(directory)
         return result
 
     def clean_folder_path(self, folder):

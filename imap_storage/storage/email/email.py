@@ -103,10 +103,10 @@ class Email:
         """access to the file objects, fetch if not already done"""
         if self._files is None:
             self._files = []
-            self._fetch_payloads()
+            self.fetch_payloads()
         return self._files
 
-    def _fetch_payloads(self):
+    def fetch_payloads(self):
         if self.uid is not None:
             payloads = self.directory.fetch_payloads(self)
             for payload in payloads:
@@ -114,10 +114,6 @@ class Email:
                         'multipart/alternative;'):
                     self.files.append(file_from_payload(self, payload))
         return self.files
-
-#    @files.setter
-#    def files(self, files_list):
-#        self._files = files_list
 
     @property
     def xml_files(self):

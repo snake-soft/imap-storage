@@ -24,7 +24,7 @@ class Imap(IMAPClient):
             self.ssl_context.verify_mode = ssl.CERT_NONE
         else:
             self.ssl_context = None
-        self.current_folder = None
+        self.current_folder = self.config.directory
         self.init()
         self.connect()
         self._folders = None
@@ -43,33 +43,33 @@ class Imap(IMAPClient):
 
     def connect(self):
         """Connect to Imap Server with credentials from self.config.imap"""
-        # (ConnectionResetError, AttributeError, BrokenPipeError, IMAP4.abort,)
         if not self.is_ok:
             self.init()
-
         if self.state == 'NONAUTH':
             self.login(self.config.imap.user, self.config.imap.password)
         if self.state == 'AUTH':
-            self.create_folder(self.config.directory)
+            IMAPClient.select_folder(self, self.current_folder)
         if self.state != 'SELECTED':
             raise exceptions.LoginError('Unable to connect')
 
     @property
     def is_ok(self):
         """ test if the imap connection is ok
-        :returns: bool
+        :returns: True if connection is ok
         """
-        socket = self._imap.socket()
+        if hasattr(self, '_imap'):
+            socket = self._imap.socket()
+        else:
+            return False
         try:
             socket.getpeername()
         except OSError:
             return False
-#
         try:
             self.noop()
-        except IMAP4.abort:
+        # (ConnectionResetError, AttributeError, BrokenPipeError, IMAP4.abort,)
+        except (IMAP4.abort, ConnectionResetError):
             return False
-#
         return True
 
     @property
@@ -87,17 +87,18 @@ class Imap(IMAPClient):
             folder = folder[0:-1]
         return folder
 
+    # ### Overrides of IMAPClient methods: ###
     def save_message(self, msg_obj):
         """save msg_obj to imap directory
         :returns: new uid on success or False
         """
+        self.connect()
         result = self.append(self.current_folder, str(msg_obj))
         return int(result.decode('utf-8').split(']')[0].split()[-1])
 
-    # ### Overrides of IMAPClient methods: ###
     @timer
     def list_folders(self):  # pylint: disable=arguments-differ
-        # self.connect()
+        self.connect()
         directory = self.config.directory
         folders = IMAPClient.list_folders(self, directory=directory)
         folders = [folder[2] for folder in folders
@@ -107,6 +108,7 @@ class Imap(IMAPClient):
     @timer
     def create_folder(self, folder):
         # pylint: disable=arguments-differ
+        self.connect()
         result = False
         folder = self.clean_folder_path(folder)
         try:
@@ -119,6 +121,7 @@ class Imap(IMAPClient):
     @timer
     def select_folder(self, folder):  # pylint: disable=arguments-differ
         """selects folder if exist"""
+        self.connect()
         folder = self.clean_folder_path(folder)
         #=======================================================================
         # if folder == self.current_folder:
@@ -166,14 +169,20 @@ class Imap(IMAPClient):
 
     @timer
     def delete_folder(self, folder):
+        """delete folder and all sub folders recursive
+        :returns: list of deleted folders and subfolders
+        """
         self.connect()
+        deleted = []
         folder = self.clean_folder_path(folder)
-        response = False
-        if folder in self.list_folders() and folder != self.config.directory:
-            self.select_folder(self.config.directory)
-            response = IMAPClient.delete_folder(self, folder)
-            response = 'Delete completed'.encode() in response
-        return response
+        folders = self.list_folders()
+        for fldr in folders:
+            if fldr.startswith(folder) and fldr != self.config.directory:
+                self.select_folder(self.config.directory)
+                response = IMAPClient.delete_folder(self, fldr)
+                if 'Delete completed'.encode() in response:
+                    deleted.append(fldr)
+        return deleted
 
     @timer
     def delete_messages(self, messages, silent=False):

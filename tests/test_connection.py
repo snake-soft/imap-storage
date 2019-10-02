@@ -27,7 +27,7 @@ class ConnectionTestCase(CustomTestCase):
 
     def test_delete_folder(self):
         imap = self.account.imap
-        self.assertFalse(imap.delete_folder(self.config.directory))
+        self.assertEqual(imap.delete_folder(self.config.directory), [])
         self.assertTrue(imap.create_folder('bla'))
         self.assertIn(self.config.directory + '.bla', imap.list_folders())
         self.assertTrue(imap.delete_folder('bla'))
