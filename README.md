@@ -1,5 +1,6 @@
 
 # imap-storage
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Documentation Status](https://readthedocs.org/projects/imap-storage/badge/?version=latest)](https://imap-storage.readthedocs.io/en/latest/?badge=latest)
 
@@ -10,8 +11,11 @@ Use your Email-account as Storage for data structures and files
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
+
 ### Introducing notes
+
 - Before reaching version 1.0, the storage layout may change when updating
+
 
 ### Prerequisites
 
@@ -19,10 +23,9 @@ python3.5 or later.
 It should work Python3.4+ but tests are running on 3.5.3 and 3.7.4 now.
 
 This project makes use of the following libraries:
-```
-- imapclient
-- lxml
-```
+* [IMAPClient](https://imapclient.readthedocs.io/en/2.1.0/) - easy-to-use, Pythonic and complete IMAP client library.
+* [lxml](https://lxml.de/) - the most feature-rich and easy-to-use library for processing XML and HTML in the Python language
+
 
 ### Installing
 
@@ -30,6 +33,7 @@ You can install the latest release from pip:
 ```
 pip install imap-storage
 ```
+
 
 ### Short example
 
@@ -52,6 +56,7 @@ account.close()
 
 
 ## Running the tests
+
 Rename 'secrets.sample.py' in tests directory to 'secrets.py' and include your e-mail account for testing.
 Then run this inside root directory:
 ```
@@ -63,6 +68,7 @@ or run it with coverage:
 coverage run --source='imap_storage' -m unittest && coverage report -m --skip-covered
 ```
 
+
 ### And coding style tests
 
 Code style is not finished, mostly because of missing docstrings.
@@ -70,28 +76,29 @@ Code style is not finished, mostly because of missing docstrings.
 pylint imap_storage
 ```
 
+
 ## Deployment
 
 This library is not ready to be deployed productive
 
 
-## Built With
-* [IMAPClient](https://imapclient.readthedocs.io/en/2.1.0/) - easy-to-use, Pythonic and complete IMAP client library.
-* [lxml](https://lxml.de/) - the most feature-rich and easy-to-use library for processing XML and HTML in the Python language
-
-
 ## Contributing
+
 Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
 
 
 ## Versioning
+
 We use [SemVer](http://semver.org/) for versioning.. 
 During beta development minor versions may be incompatible, too.
 
+
 ## Authors
+
 * **Me** - *Initial work* - [Snake-Soft](https://github.com/snake-soft)
 
 See also the list of [contributors](https://github.com/snake-soft/imap-storage/graphs/contributors) who participated in this project.
+
 
 ## License
 
