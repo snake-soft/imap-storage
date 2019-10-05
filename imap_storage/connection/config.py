@@ -20,24 +20,16 @@ class Config:
 
     @classmethod
     def from_request(cls, request):
-        if all(x in request.session for x in ['imap_user', 'imap_password']):
-            config = cls()
-            config.imap.user = request.session.get('imap_user')
-            config.imap.password = request.session.get('imap_password')
-            config.imap.host = request.session.get('imap_host')
-            config.imap.port = request.session.get('imap_port')
+        config = cls()
+        config.imap.user = request.session.get('imap_user')
+        config.imap.password = request.session.get('imap_password')
+        config.imap.host = request.session.get('imap_host')
+        config.imap.port = request.session.get('imap_port', 993)
 
-            config.smtp.user = request.session.get('imap_user')
-            config.smtp.password = request.session.get('imap_password')
-            config.smtp.host = request.session.get('smtp_host')
-            config.smtp.port = request.session.get('smtp_port')
-            return config
+        return config if config.is_ok else None
 
     def __str__(self):
-        return '{}, {}'.format(
-            str(self.imap),
-            str(self.smtp),
-            )
+        return '{}, {}'.format(str(self.imap), str(self.smtp))
 
 
 class _ImapConfig:  # pylint: disable=too-few-public-methods
@@ -49,7 +41,7 @@ class _ImapConfig:  # pylint: disable=too-few-public-methods
 
     @property
     def is_ok(self):
-        return all((self.user, self.password))
+        return all((self.user, self.password, self.host, self.port))
 
     def __str__(self):
         return str(self.user)

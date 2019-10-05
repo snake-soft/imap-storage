@@ -48,7 +48,7 @@ class Imap(IMAPClient):
         if self.state == 'NONAUTH':
             self.login(self.config.imap.user, self.config.imap.password)
         if self.state == 'AUTH':
-            IMAPClient.select_folder(self, self.current_folder)
+            IMAPClient.select_folder(self, 'INBOX')#self.current_folder)
         if self.state != 'SELECTED':
             raise exceptions.LoginError('Unable to connect')
 
@@ -109,14 +109,13 @@ class Imap(IMAPClient):
     def create_folder(self, folder):
         # pylint: disable=arguments-differ
         self.connect()
-        result = False
         folder = self.clean_folder_path(folder)
         try:
-            result = IMAPClient.create_folder(self, folder)
+            response = IMAPClient.create_folder(self, folder)
+            self.select_folder(folder)
+            return response
         except IMAP4.error:
             pass
-        self.select_folder(folder)
-        return result
 
     @timer
     def select_folder(self, folder):  # pylint: disable=arguments-differ

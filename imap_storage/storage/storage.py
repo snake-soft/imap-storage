@@ -28,13 +28,18 @@ class Storage:
         for directory in self.directories:
             if directory.path == path:
                 return directory
-        return None
 
     def new_directory(self, path):
+        """creates new directory and all subdirectories along the path
+        :returns: directory object
+        """
         path = self.clean_folder_path(path)
-        self.imap.create_folder(path)
-        directory = Directory(self, path)
-        self.directories.append(directory)
+        splitted = path.split('.')
+        for i in range(len(splitted)):
+            subpath = '.'.join(splitted[0:i+1])
+            self.imap.create_folder(subpath)
+            directory = Directory(self, subpath)
+            self.directories.append(directory)
         return directory
 
     def delete_directory(self, path):

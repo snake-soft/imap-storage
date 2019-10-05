@@ -1,4 +1,3 @@
-from imapclient.exceptions import LoginError
 from .connection.config import Config
 from .connection.imap import Imap
 from .storage.storage import Storage

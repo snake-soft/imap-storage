@@ -29,7 +29,8 @@ class Directory:
         dirs = []
         for directory in self.storage.directories:
             path = directory.path
-            if path.startswith(self.path) and path != self.path:
+            is_subdir = len(self.path.split('.'))+1 == len(path.split('.'))
+            if path.startswith(self.path) and is_subdir:
                 dirs.append(self.storage.directory_by_path(path))
         return dirs
 
