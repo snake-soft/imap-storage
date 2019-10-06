@@ -8,7 +8,7 @@ Use your Email-account as Storage for data structures and files
 
 ## Getting Started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
+Have a look at the [documentation](https://imap-storage.readthedocs.io/en/latest/).
 
 ### Introducing notes
 - Before reaching version 1.0, the storage layout may change when updating
