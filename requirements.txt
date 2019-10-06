@@ -1,5 +1,5 @@
 gitpython
-lxml>=3
+lxml
 imapclient
 pylint
 coverage
