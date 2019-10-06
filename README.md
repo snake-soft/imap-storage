@@ -17,7 +17,7 @@ Have a look at the [documentation](https://imap-storage.readthedocs.io/en/latest
 
 ### Prerequisites
 python3.5 or later.
-It should work Python3.4+ but tests are running on 3.5.3 and 3.7.4 now.
+It should work Python3.4+ but tests are running on 2.7, 3.5 and 3.7.
 
 This project makes use of the following libraries:
 * [IMAPClient](https://imapclient.readthedocs.io/en/2.1.0/) - easy-to-use, Pythonic and complete IMAP client library.

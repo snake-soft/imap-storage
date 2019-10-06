@@ -1,6 +1,8 @@
 from unittest import TestCase
 from os import environ
 import imap_storage
+from uuid import uuid4 as uuid
+
 NEEDED_ENV_VARS = (
     'IMAP_STORAGE_USER',
     'IMAP_STORAGE_PASSWORD',
@@ -27,7 +29,7 @@ class CustomTestCase(TestCase):
         config.imap.host = HOST
         config.imap.port = PORT
         config.tag = 'PythonUnittest'
-        config.directory = 'imap_storage_tests'
+        config.directory = 'imap_storage_tests_' + str(uuid())
         self.config = config
         self.account = imap_storage.Account(config, 1)
         self.email = None
@@ -49,5 +51,5 @@ class CustomTestCase(TestCase):
             email.delete()
         for directory in self.directory.childs:
             directory.delete()
-        self.directory.delete()
+        self.account.storage.uninstall()
         self.account.close()

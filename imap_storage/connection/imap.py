@@ -6,6 +6,7 @@ from builtins import ConnectionResetError
 from imaplib import IMAP4
 from imapclient import IMAPClient, exceptions
 from imap_storage.tools import timer
+from imapclient.exceptions import IMAPClientError
 __all__ = ['Imap', 'timer']
 
 
@@ -49,8 +50,6 @@ class Imap(IMAPClient):
             self.login(self.config.imap.user, self.config.imap.password)
         if self.state == 'AUTH':
             self.create_folder(self.config.directory, connect=False)
-            #self.current_folder = 'INBOX'
-            #IMAPClient.select_folder(self, self.current_folder)
         if self.state != 'SELECTED':
             raise exceptions.LoginError('Unable to connect')
 
@@ -118,19 +117,18 @@ class Imap(IMAPClient):
         """selects folder if exist"""
         if connect:
             self.connect()
-        folder = self.clean_folder_path(folder)
-        #=======================================================================
-        # if folder == self.current_folder:
-        #     return True
-        #=======================================================================
+        if folder != 'INBOX':
+            folder = self.clean_folder_path(folder)
+        if folder == self.current_folder:
+            return True
         try:
-            response = IMAPClient.select_folder(self, folder)[b'READ-WRITE']
-            self.current_folder = folder
+            result = IMAPClient.select_folder(self, folder)[b'READ-WRITE']
+            if result:
+                self.current_folder = folder
+                return True
+            return False
         except IMAP4.error:
-            response = False
-            self.current_folder = self.config.directory
-            IMAPClient.select_folder(self, self.config.directory)
-        return response
+            return False
 
     def logout(self):
         try:
@@ -168,16 +166,18 @@ class Imap(IMAPClient):
             )
 
     @timer
-    def delete_folder(self, folder):
+    def delete_folder(self, folder, allow_base=False):
         """delete folder and all sub folders recursive
         :returns: list of deleted folders and subfolders
         """
         self.connect()
         deleted = []
         folder = self.clean_folder_path(folder)
-        folders = self.list_folders()
+        folders = [fldr for fldr in self.list_folders()
+                   if fldr.startswith(folder)]
+
         for fldr in folders:
-            if fldr.startswith(folder) and fldr != self.config.directory:
+            if allow_base or fldr != self.config.directory:
                 self.select_folder(self.config.directory)
                 response = IMAPClient.delete_folder(self, fldr)
                 if 'Delete completed'.encode() in response:
@@ -201,6 +201,10 @@ class Imap(IMAPClient):
     def expunge(self, messages=None):
         self.connect()
         return IMAPClient.expunge(self, messages=messages)
+
+    def uninstall(self):
+        self.delete_folder(self.config.directory, allow_base=True)
+        self.logout()
 
     def __str__(self):
         return self.config.imap.user

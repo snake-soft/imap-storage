@@ -124,3 +124,6 @@ class Storage:
                 else:
                     subjects_cleaned[subject].append(uid)
         return subjects_cleaned
+
+    def uninstall(self):
+        return self.imap.uninstall()
