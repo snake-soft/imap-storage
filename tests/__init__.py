@@ -1,11 +1,21 @@
 from unittest import TestCase
+from os import environ
 import imap_storage
-try:
-    from tests.secrets import USER, PASSWORD, HOST, PORT
-except ModuleNotFoundError:
-    raise(AttributeError(
-        'No /tests/secrets.py found. Use /tests/secrets.sample.py'
-        ))
+NEEDED_ENV_VARS = (
+    'IMAP_STORAGE_USER',
+    'IMAP_STORAGE_PASSWORD',
+    'IMAP_STORAGE_HOST'
+    )
+for var in NEEDED_ENV_VARS:
+    if var not in environ:
+        raise(AttributeError(
+            var + 'not found as environment variable. \
+            Look at /environment.sample.sh'
+            ))
+USER = environ.get('IMAP_STORAGE_USER')
+PASSWORD = environ.get('IMAP_STORAGE_PASSWORD')
+HOST = environ.get('IMAP_STORAGE_HOST')
+PORT = environ.get('IMAP_STORAGE_PORT', 993)
 
 
 class CustomTestCase(TestCase):

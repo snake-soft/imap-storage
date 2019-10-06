@@ -10,3 +10,4 @@ __pycache__
 /tests/secrets.py
 /dist/
 /build/
+/environment.sh
