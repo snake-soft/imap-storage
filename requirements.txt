@@ -4,3 +4,4 @@ imapclient
 pylint
 coverage
 sphinx
+sphinx-rtd-theme

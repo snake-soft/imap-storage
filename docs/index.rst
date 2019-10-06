@@ -11,8 +11,6 @@ Welcome to imap-storage's documentation!
    :caption: Contents:
 
 
-
-Indices and tables
 ==================
 
 * :ref:`genindex`
