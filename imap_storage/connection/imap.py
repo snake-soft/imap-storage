@@ -24,7 +24,7 @@ class Imap(IMAPClient):
             self.ssl_context.verify_mode = ssl.CERT_NONE
         else:
             self.ssl_context = None
-        self.current_folder = self.config.directory
+        self.current_folder = None
         self.init()
         self.connect()
         self._folders = None
@@ -48,7 +48,9 @@ class Imap(IMAPClient):
         if self.state == 'NONAUTH':
             self.login(self.config.imap.user, self.config.imap.password)
         if self.state == 'AUTH':
-            IMAPClient.select_folder(self, 'INBOX')#self.current_folder)
+            self.create_folder(self.config.directory, connect=False)
+            #self.current_folder = 'INBOX'
+            #IMAPClient.select_folder(self, self.current_folder)
         if self.state != 'SELECTED':
             raise exceptions.LoginError('Unable to connect')
 
@@ -88,17 +90,10 @@ class Imap(IMAPClient):
         return folder
 
     # ### Overrides of IMAPClient methods: ###
-    def save_message(self, msg_obj):
-        """save msg_obj to imap directory
-        :returns: new uid on success or False
-        """
-        self.connect()
-        result = self.append(self.current_folder, str(msg_obj))
-        return int(result.decode('utf-8').split(']')[0].split()[-1])
-
     @timer
-    def list_folders(self):  # pylint: disable=arguments-differ
-        self.connect()
+    def list_folders(self, connect=True):  # pylint: disable=arguments-differ
+        if connect:
+            self.connect()
         directory = self.config.directory
         folders = IMAPClient.list_folders(self, directory=directory)
         folders = [folder[2] for folder in folders
@@ -106,21 +101,23 @@ class Imap(IMAPClient):
         return folders
 
     @timer
-    def create_folder(self, folder):
+    def create_folder(self, folder, connect=True):
         # pylint: disable=arguments-differ
-        self.connect()
+        response = False
+        if connect:
+            self.connect()
         folder = self.clean_folder_path(folder)
-        try:
+        if folder not in self.list_folders(connect=connect):
             response = IMAPClient.create_folder(self, folder)
-            self.select_folder(folder)
-            return response
-        except IMAP4.error:
-            pass
+        if self.current_folder != folder:
+            self.select_folder(folder, connect=connect)
+        return response
 
     @timer
-    def select_folder(self, folder):  # pylint: disable=arguments-differ
+    def select_folder(self, folder, connect=True):  # pylint: disable=arguments-differ
         """selects folder if exist"""
-        self.connect()
+        if connect:
+            self.connect()
         folder = self.clean_folder_path(folder)
         #=======================================================================
         # if folder == self.current_folder:
@@ -129,9 +126,11 @@ class Imap(IMAPClient):
         try:
             response = IMAPClient.select_folder(self, folder)[b'READ-WRITE']
             self.current_folder = folder
-            return response
         except IMAP4.error:
-            return False
+            response = False
+            self.current_folder = self.config.directory
+            IMAPClient.select_folder(self, self.config.directory)
+        return response
 
     def logout(self):
         try:
@@ -141,12 +140,14 @@ class Imap(IMAPClient):
         return result
 
     @timer
-    def search(self, criteria=None, charset=None):
+    def search(self, folder=None, criteria=None, charset=None):
+        # pylint: disable=arguments-differ
         """Get messages on current selected Imap folder
         criteria could also be 'ALL'
         :returns: All Message [ids] with *self.config.tag* in subject
         """
         self.connect()
+        self.select_folder(folder or self.current_folder)
         criteria = criteria or ['SUBJECT', self.config.tag]
         # self.connect()
         ret = IMAPClient.search(self, criteria=criteria, charset=charset)

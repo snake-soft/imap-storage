@@ -103,11 +103,21 @@ class Directory:
 
     def add_file_email(self, file):
         """Create new Email with one file"""
+        if file.name in [file.name for file in self.files]:
+            return
         email = self.new_email(file.name)
         email.add_file(file)
         email.save()
         self.refresh()
         return self.email_by_uid(email.uid)
+
+    def file_by_name(self, name):
+        """
+        :returns: first file with filename
+        """
+        for file in self.files:
+            if file.name == name:
+                return file
 
     def new_email(self, item_name, from_addr=None, from_displ=None):
         """needs to be runned if its a ne Email with no uid"""
@@ -128,7 +138,6 @@ class Directory:
             )
         email.body = email.new_body()
         # email.save()
-        self.refresh()
         return email
 
     def delete_email(self, email_uid_or_obj):
@@ -165,6 +174,17 @@ class Directory:
         :returns: payloads as string
         """
         return self.storage.get_file_payloads(email.uid)[email.uid]
+
+    def save_message(self, msg_obj):
+        """save msg_obj to imap directory
+        :returns: new uid on success or False
+        """
+        old_uid = msg_obj.uid
+        result = self.imap.append(self.folder, str(msg_obj.plain))
+        if old_uid:
+            self.imap.delete_messages(old_uid)
+        self.refresh()
+        return int(result.decode('utf-8').split(']')[0].split()[-1])
 
     def __hash__(self):
         return hash(self.path)

@@ -227,11 +227,7 @@ class Email:
 
     def save(self):
         """Produce new Email from body, head and files, save it, delete old"""
-        imap = self.directory.storage.imap
-        old_uid = self.uid or False
-        self.uid = int(imap.save_message(self.plain))
-        if old_uid:
-            imap.delete_messages(old_uid)
+        self.uid = int(self.directory.save_message(self))
         self._files = None
         return self.uid
 

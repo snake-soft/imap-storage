@@ -25,7 +25,10 @@ class ConnectionTestCase(CustomTestCase):
         self.assertEqual(parent_dir.url, '')
         self.assertEqual(child_dir.url, 'child')
 
-        email = self.create_test_email()
+        #email = self.create_test_email()
+        email = parent_dir.new_email('Testobject')
+        email.save()
+
         self.assertEqual(parent_dir.email_by_uid(email.uid), email)
         email.delete()
 

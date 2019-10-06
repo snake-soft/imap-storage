@@ -17,7 +17,7 @@ class CustomTestCase(TestCase):
         config.imap.host = HOST
         config.imap.port = PORT
         config.tag = 'PythonUnittest'
-        config.directory = 'test_directory'
+        config.directory = 'imap_storage_tests'
         self.config = config
         self.account = imap_storage.Account(config, 1)
         self.email = None
@@ -35,6 +35,9 @@ class CustomTestCase(TestCase):
         return self.email
 
     def tearDown(self):
-        if self.email:
-            self.email.delete()
+        for email in self.directory.emails:
+            email.delete()
+        for directory in self.directory.childs:
+            directory.delete()
+        self.directory.delete()
         self.account.close()
