@@ -1,5 +1,6 @@
 """Body class"""
 from lxml import etree as ET
+# pylint: disable=I1101  # source of lxml is unavailable
 
 
 class Body:

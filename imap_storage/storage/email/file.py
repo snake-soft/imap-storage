@@ -7,7 +7,7 @@ from email.mime.image import MIMEImage
 from email.mime.audio import MIMEAudio
 from email.mime.base import MIMEBase
 from base64 import decodebytes
-""":TODO: constructor functions are in wrong place"""
+# :TODO: constructor functions are in wrong place
 
 
 __all__ = [
@@ -25,7 +25,7 @@ def file_from_local(path):
     from os import sep
     with open(path, 'rb') as file:
         data = file.read()
-    file = _File()
+    file = File()
     file.name = path.split(sep)[-1]
     file.data = data
     file.mime = MimeTypes().guess_type(path)[0]
@@ -36,7 +36,7 @@ def file_from_local(path):
 
 def file_from_upload(uploaded_file):
     """create File object from Django uploaded file"""
-    file = _File()
+    file = File()
     #file.email = email_obj
     file.name = uploaded_file.name
     file.data = uploaded_file.read()
@@ -47,7 +47,7 @@ def file_from_upload(uploaded_file):
 
 def file_from_payload(email_obj, payload):
     """create File object from message payload"""
-    file = _File()
+    file = File()
     file.email = email_obj
     file.name = payload['Content-Disposition'].split(
         'filename=')[-1].strip('"')
@@ -58,7 +58,7 @@ def file_from_payload(email_obj, payload):
 
 def file_from_xml(email_obj, xml):
     """create File object from xml structure"""
-    file = _File()
+    file = File()
     file.email = email_obj
     file.name = xml.attrib['name']
     file.mime = xml.attrib['mime'] if 'mime' in xml.attrib else ''
@@ -68,7 +68,7 @@ def file_from_xml(email_obj, xml):
     return file
 
 
-class _File():
+class File():  # :TODO: # pylint: disable=too-many-instance-attributes
     """Attachment class
     Maybe the following type later:
     from django.core.files import File
@@ -77,7 +77,6 @@ class _File():
     """
     def __init__(self):
         self.email = None
-        #, name, data=None, mime=None, time=None, size=None, id_=None
         self.name = None
         self.mime = None
         self.time = datetime.now().timestamp()
@@ -98,6 +97,7 @@ class _File():
 
     @property
     def size(self):
+        """Size of the file as timestamp"""
         return self._size or len(self.data)
 
     @size.setter
@@ -106,6 +106,7 @@ class _File():
 
     @property
     def htime(self):
+        """Size as human readable"""
         return datetime.fromtimestamp(self.time)
 
     @property
@@ -152,11 +153,10 @@ class _File():
 
     def read(self):
         """Read the data of the object"""
-        maintype, subtype = self.mime.split('/') if self.mime else '', ''
+        maintype, _ = self.mime.split('/') if self.mime else '', ''  # subtype
         if maintype != 'text' and isinstance(self.data, str):
             return decodebytes(self.data.encode())
-        else:
-            return self.data
+        return self.data
 
     def as_response(self):
         """

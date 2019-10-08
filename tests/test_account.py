@@ -14,6 +14,6 @@ class AccountTestCase(CustomTestCase):
         account2.close()
 
         account3 = accounts.by_id(1)
-        self.assertTrue(account3.is_ok)
+        self.assertFalse(account3.is_ok())  # has not all data
         self.assertIsInstance(self.account.__repr__(), str)
-        self.assertTrue(self.account.is_ok)
+        self.assertTrue(self.account.is_ok()) # has all needed data

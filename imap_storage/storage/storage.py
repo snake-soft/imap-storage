@@ -1,6 +1,7 @@
-"""Factory for Storage"""
+"""Factory for Storage
+This is the layer between bare Imap and the directories that hold the data
+"""
 from email import message_from_bytes
-from imaplib import IMAP4
 from .directory import Directory
 
 
@@ -12,9 +13,10 @@ class Storage:
 
     @property
     def directories(self):
-        """
-        :param path: relative to the base path from self.imap.config.directory
-        :returns: list of Directory objects
+        """ Lists of all Directory objects at this storage
+
+        Returns:
+            list: Containing Directory objects
         """
         if self._directories is None:
             folders = self.imap.list_folders()
@@ -24,14 +26,26 @@ class Storage:
         return self._directories
 
     def directory_by_path(self, path):
+        """
+        Args:
+            path(str): find directory with that path
+
+        Returns:
+            Directory: with the given path
+        """
         path = self.clean_folder_path(path)
         for directory in self.directories:
             if directory.path == path:
                 return directory
+        return None
 
-    def new_directory(self, path):
+    def new_directory(self, path: str) -> Directory:
         """creates new directory and all subdirectories along the path
-        :returns: directory object
+        Args:
+            path(str): create directory with that path
+
+        Returns:
+            Directory: new created
         """
         path = self.clean_folder_path(path)
         splitted = path.split('.')
@@ -43,6 +57,14 @@ class Storage:
         return directory
 
     def delete_directory(self, path):
+        """Delete directory and its subdirectories
+
+        Args:
+            path(str): directory path to delete
+
+        Returns:
+            list: of paths(str) that have been deleted at imap
+        """
         # command: LIST => Selected mailbox was deleted, have to disconnect.
         # socket error: [Errno 32] Broken pipe
         path = self.clean_folder_path(path)
@@ -53,19 +75,33 @@ class Storage:
                 self.directories.remove(directory)
         return result
 
-    def clean_folder_path(self, folder):
-        folder = folder.replace('/', '.').replace(' ', '_').strip('.')
-        if not folder.startswith(self.imap.config.directory):
-            folder = '{}.{}'.format(
+    def clean_folder_path(self, folder_name):
+        """
+        Args:
+            folder_name(str): folder name to clean
+
+        Returns:
+            str: cleaned folder name
+        """
+        folder_name = folder_name.replace(
+            '/', '.').replace(' ', '_').strip('.')
+        if not folder_name.startswith(self.imap.config.directory):
+            folder_name = '{}.{}'.format(
                 self.imap.config.directory,
-                folder,
+                folder_name,
                 )
-        return folder
+        return folder_name
         # return self.imap.clean_folder_path(folder)
 
     def get_heads(self, uids):
-        """
-        :returns: dict of heads of uids {int(uid): str(head)}
+        """fetch the head of one or multiple messages
+
+        Args:
+            uids: which message heads should get fetched.
+                    can be one of type(list, str, float, int)
+
+        Returns:
+            dict: with heads of uids {int(uid): str(head)}
         """
         heads = {}
         if isinstance(uids, (int, str, float)):
@@ -75,8 +111,14 @@ class Storage:
         return heads
 
     def get_bodies(self, uids):
-        """
-        :returns: dict of bodies of uids {int(uid): str(body)}
+        """fetch the body of one or multiple messages
+
+        Args:
+            uids: which message bodies should get fetched.
+                    can be one of type(list, str, float, int)
+
+        Returns:
+            dict: with bodies of uids {int(uid): str(body)}
         """
         bodies = {}
         if isinstance(uids, (int, str, float)):
@@ -86,9 +128,13 @@ class Storage:
         return bodies
 
     def get_file_payloads(self, uids):
-        """get payload of the files
-        :param uid: uid of the message to fetch
-        :returns: payloads --> {uid: message_object}
+        """fetch the payload of one or multiple messages
+        Args:
+            uids: which message payloads should get fetched.
+                    can be one of type(list, str, float, int)
+
+        Returns:
+            dict: with payloads of uids {int(uid): payloads of uid}
         """
         payloads = {}
         if isinstance(uids, (int, str, float)):
@@ -103,8 +149,14 @@ class Storage:
         return payloads
 
     def get_subjects(self, folder=None):
-        """
-        :returns: dict of subjects and uids {subject: [uid, uid]}
+        """Fetch subjects
+
+        Args:
+            folder(str, optional): select which folder you want to fetch
+                subjects of. It will be created and selected if needed.
+
+        Returns:
+            dict: of subjects and uids {subject: [uid, uid]}
         """
         if folder:
             self.imap.create_folder(folder)
@@ -126,4 +178,9 @@ class Storage:
         return subjects_cleaned
 
     def uninstall(self):
+        """deletes the complete storage directory recursive and log out
+
+        Returns:
+            None: at the moment :TODO:
+        """
         return self.imap.uninstall()

@@ -10,6 +10,9 @@ from .file import file_from_payload, file_from_xml
 
 
 class Email:
+    # :TODO:
+    # pylint: disable=too-many-public-methods
+    # pylint: disable=too-many-instance-attributes
     """Emails as data storage interface
     :param imap: Imap connection
     :param uid: new object if None - make sure to run *new* method
@@ -24,22 +27,37 @@ class Email:
 
     @property
     def path(self):
+        """path of the email
+
+        Returns:
+            str: directory path/uid
+        """
         return self.directory.path + '/' + str(self.uid)
 
     @property
     def subject(self):
+        """subject of the email
+        It is a cached value and fetches one time when accessing the property
+
+        Returns:
+            str: subject
+        """
         if self._subject is None:
             self.directory.fetch_subjects()
         return self._subject
 
     @property
     def name(self):
+        """name of the email
+        Returns:
+            str: name
+        """
         tag = self.directory.imap.config.tag
         if not tag:
             raise AttributeError
         name = self.subject
         if not self.subject:
-            raise AttributeError("What is the problem here?")
+            raise AttributeError("Couldn't fetch subject when needed")
         if self.subject.startswith(tag):
             tag = self.directory.imap.config.tag
             name = self.subject[len(tag):].strip()
@@ -95,6 +113,7 @@ class Email:
             self._body = Body(body)
 
     def new_body(self):
+        """create new empty body for this email"""
         self.body = Body(None).new()
         return self.body
 
@@ -107,6 +126,11 @@ class Email:
         return self._files
 
     def fetch_payloads(self):
+        """fetch payloads of this email
+
+        Returns:
+            list: self.files with appended payloads
+        """
         if self.uid is not None:
             payloads = self.directory.fetch_payloads(self)
             for payload in payloads:
@@ -126,10 +150,12 @@ class Email:
 
     @property
     def plain(self):
+        """get the whole email with files as plain text"""
         return self.to_string(html=False)
 
     @property
     def html(self):
+        """get the whole email with files as html"""
         return self.to_string(html=True)
 
     def to_string(self, html=False):
@@ -168,12 +194,30 @@ class Email:
         return str(msg)
 
     def file_by_name(self, name):
+        """get file by name
+
+        Args:
+            name(str): of the file to get
+
+        Returns:
+            File: object
+        """
         return [file for file in self.files if file.name == name][0]
 
     def file_by_id(self, id_):
+        """get file by id
+        Id is saved in the body (xml)
+
+        Args:
+            id_(str): id of the file to get
+
+        Returns:
+            File: object
+        """
         for file in self.xml_files:
             if file.id_ == id_:
                 return self.file_by_name(file.name)
+        return False
 
     def add_item(self, tag, text=None, attribs=None, parent=None):
         """forwards to body method"""
@@ -223,6 +267,11 @@ class Email:
         self.save()
 
     def remove_file(self, file):
+        """removes file object from email
+
+        Args:
+            file(File): File object to delete from email
+        """
         self.remove_file_by_attrib('name', file.name)
 
     def save(self):
@@ -232,6 +281,11 @@ class Email:
         return self.uid
 
     def delete(self):
+        """delete this email
+
+        Returns:
+            bool: True if success
+        """
         return self.directory.delete_email(self)
 
     def __hash__(self):

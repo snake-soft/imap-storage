@@ -32,6 +32,7 @@ def timer(func):
 
 
 class LogEntry:
+    """Class that represents a Log entry"""
     MODES = ('test', 'wsgi', 'main', 'django')
 
     def __init__(self, func, duration, result, *args, **kwargs):
@@ -42,9 +43,23 @@ class LogEntry:
         self._kwargs = kwargs
 
     def short(self, with_result=False):
+        """short version of the log message
+        Args:
+            with_result(bool, optional): append function result to log
+
+        Returns:
+            str: log entry
+        """
         return self.to_string(short=True, with_result=with_result)
 
     def long(self, with_result=False):
+        """long version of the log message
+        Args:
+            with_result(bool, optional): append function result to log
+
+        Returns:
+            str: log entry
+        """
         return self.to_string(short=False, with_result=with_result)
 
     @property
@@ -56,10 +71,12 @@ class LogEntry:
 
     @property
     def kwargs_long(self):
+        """kwargs as long version"""
         return self.kwargs_list()
 
     @property
     def kwargs_short(self):
+        """kwargs as short version"""
         return self.kwargs_list(short=True)
 
     def kwargs_list(self, short=False):
@@ -74,16 +91,25 @@ class LogEntry:
                 for key, value in self._kwargs.items()]
 
     def to_string(self, short=False, with_result=False):
+        """creates the string to enter in logs
+
+        Args:
+            short(bool, optional): use short version
+            with_result(bool, optional): append result of function call to log
+
+        Returns:
+            str: log entry as string
+        """
         args_and_kwargs_str = ', '.join(
-                self.args +
-                self.kwargs_short if short else self.kwargs_long,
+            self.args +
+            self.kwargs_short if short else self.kwargs_long,
             )
         result_string = '{}({}) -> {}ms.'.format(
-                self._func.__name__, args_and_kwargs_str, self._duration
+            self._func.__name__, args_and_kwargs_str, self._duration
             )
         if with_result:
             result_string += '  >>> {} <<<'.format(
-                self.shorten_string(str(self.result)) if short else self.result,
+                self.shorten_string(str(self.result)) if short else self.result
                 )
         return result_string
 

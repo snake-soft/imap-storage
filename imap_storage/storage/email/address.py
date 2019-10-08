@@ -6,7 +6,7 @@ __all__ = ['Address']
 
 class Address(Addr):
     """Represents addresses mainly for the Email header"""
-    def __init__(self,  display_name='', addr_spec=None):
+    def __init__(self, display_name='', addr_spec=None):
         if isinstance(display_name, tuple):
             display_name, addr_spec = display_name
         super().__init__(

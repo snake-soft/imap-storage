@@ -1,9 +1,13 @@
+"""Directory class
+This represents a physical directory at storage level (imap)
+"""
 from .email.email import Email
 from .email.address import Address
 from ..tools.compare import list_compare
 
 
-class Directory:
+class Directory:  # :TODO: # pylint: disable=too-many-public-methods
+    """Directory class"""
     def __init__(self, storage, folder):
         self.storage = storage
         self.imap = storage.imap
@@ -16,6 +20,11 @@ class Directory:
 
     @property
     def parent(self):
+        """parent directory
+
+        Returns:
+            Directory:
+        """
         splitted = self.path.split('.')
         if len(splitted) > 1:
             path = '.'.join(splitted[:-1])
@@ -26,6 +35,11 @@ class Directory:
 
     @property
     def childs(self):
+        """childs of this directory
+
+        Returns:
+            list: of directories [Directory, ...]
+        """
         dirs = []
         for directory in self.storage.directories:
             path = directory.path
@@ -36,6 +50,11 @@ class Directory:
 
     @property
     def breadcrumbs(self):
+        """path of this directory in breadcrumb format
+
+        Returns:
+            list: [self.parent.parent.parent, self.parent.parent, self.parent]
+        """
         breadcrumbs = []
         directory_iter = self
         while directory_iter.parent:
@@ -67,6 +86,11 @@ class Directory:
 
     @property
     def files(self):
+        """List files of all emails inside this directory
+
+        Returns:
+            list: of files
+        """
         files = []
         for email in self.emails:
             for file in email.files:
@@ -74,17 +98,31 @@ class Directory:
         return files
 
     @property
-    def app_name(self):
+    def app_name(self):  # :TODO:
+        """the name of the application of this directory
+
+        Returns:
+            str:
+        """
         splitted = self.path.split('.')
         return splitted[1] if len(splitted) > 1 else splitted[0]
 
     @property
-    def item_name(self):
+    def item_name(self):  # :TODO:
+        """this is the name of the item
+
+        Returns:
+            str
+        """
         return self.path.split('.')[-1]
 
     @property
     def url(self):
-        """makes the Django life easier"""
+        """makes the Django life easier
+
+        Returns:
+            str: path as url
+        """
         directory = self.imap.config.directory
         if self.path.startswith(directory):
             url = self.path[len(directory)+1:]
@@ -93,18 +131,35 @@ class Directory:
         return url.replace('.', '/')
 
     def refresh(self):
+        """refresh the directories cached properties"""
         self._uids = None
 
     def email_by_uid(self, uid):
+        """get email by uid
+
+        Args:
+            uid(int): uid you want to have the email object
+
+        Returns:
+            Email: if email with uid exists in this directory or None
+        """
         uid = int(uid)
         for email in self.emails:
             if email.uid == uid:
                 return email
+        return None
 
     def add_file_email(self, file):
-        """Create new Email with one file"""
+        """Create new Email with one file
+
+        Args:
+            file(File): object to append as file to the directory
+
+        Returns:
+            Email: new created file Email
+        """
         if file.name in [file.name for file in self.files]:
-            return
+            return False
         email = self.new_email(file.name)
         email.add_file(file)
         email.save()
@@ -112,12 +167,18 @@ class Directory:
         return self.email_by_uid(email.uid)
 
     def file_by_name(self, name):
-        """
-        :returns: first file with filename
+        """get file by name
+
+        Args:
+            name(str): name of the file to get
+
+        Returns:
+            File: first file with name
         """
         for file in self.files:
             if file.name == name:
                 return file
+        return False
 
     def new_email(self, item_name, from_addr=None, from_displ=None):
         """needs to be runned if its a ne Email with no uid"""
@@ -141,6 +202,14 @@ class Directory:
         return email
 
     def delete_email(self, email_uid_or_obj):
+        """delete email within this directory
+
+        Args:
+            email_uid_or_obj(Email, int, str): email to delete
+
+        Returns:
+            bool: True if success
+        """
         if isinstance(email_uid_or_obj, Email):
             uid = email_uid_or_obj.uid
         else:
@@ -149,10 +218,26 @@ class Directory:
         return result
 
     def delete(self):
+        """Delete this storage
+
+        Warning:
+            Also deletes its subdirectories recursively
+
+        Returns:
+            bool: True if success
+        """
         return self.storage.delete_directory(self.path)
 
     # ### Fetch methods ###
     def fetch_subjects(self, email=None):
+        """fetch subjects
+
+        Args:
+            email(Email, optional): fetch only from this email
+
+        Returns:
+            dict: {uid: subject}
+        """
         if email:
             uids = [email.uid]
         else:
@@ -164,9 +249,25 @@ class Directory:
         return subjects
 
     def fetch_head(self, email):
+        """fetch email head
+
+        Args:
+            email(Email): fetch head of this email
+
+        Returns:
+            str: head of email
+        """
         return self.storage.get_heads(email.uid)[email.uid]
 
     def fetch_body(self, email):
+        """fetch email body
+
+        Args:
+            email(Email): fetch body of this email
+
+        Returns:
+            str: body of email
+        """
         return self.storage.get_bodies(email.uid)[email.uid]
 
     def fetch_payloads(self, email):

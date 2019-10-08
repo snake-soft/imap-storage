@@ -23,7 +23,7 @@ class ConnectionTestCase(CustomTestCase):
     def test_unsafe_account(self):
         """test login with unsafe ssl configuration"""
         account = imap_storage.Account(self.config, 2, unsafe=True)
-        self.assertEqual(account.imap.state, 'SELECTED')
+        self.assertEqual(account.imap.state(), 'SELECTED')
         account.close()
 
     def test_delete_folder(self):
@@ -62,7 +62,7 @@ class ConnectionTestCase(CustomTestCase):
             }
         request = SimpleNamespace(session=session)
         config = imap_storage.Config.from_request(request)
-        self.assertTrue(config.is_ok)
+        self.assertTrue(config.is_ok())
 
         request2 = SimpleNamespace(session={})
         config2 = imap_storage.Config.from_request(request2)

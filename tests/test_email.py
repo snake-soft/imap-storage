@@ -4,7 +4,7 @@ from datetime import datetime
 from . import CustomTestCase
 from imap_storage.storage.email.head import Head
 from imap_storage.storage.email.body import Body
-from imap_storage.storage.email.file import file_from_local, _File
+from imap_storage.storage.email.file import file_from_local, File
 
 
 class EmailTestCase(CustomTestCase):  # imap.py", line 64, in connect
@@ -66,8 +66,8 @@ class EmailTestCase(CustomTestCase):  # imap.py", line 64, in connect
         file.mime = None
         email.add_file(file)
         email.save()
-        self.assertIsInstance(email.files[0], _File)
-        self.assertIsInstance(email.xml_files[0], _File)
+        self.assertIsInstance(email.files[0], File)
+        self.assertIsInstance(email.xml_files[0], File)
 
         for file in self.email.files:
             email.remove_file(file)
@@ -101,7 +101,7 @@ class EmailTestCase(CustomTestCase):  # imap.py", line 64, in connect
         self.assertTrue(file3 < file4)
         self.assertIsInstance(str(file5), str)
         self.assertIsInstance(email.plain, str)
-        self.assertIsInstance(email.file_by_id(file5.id_), _File)
-        self.assertIsInstance(email.file_by_name('binary'), _File)
+        self.assertIsInstance(email.file_by_id(file5.id_), File)
+        self.assertIsInstance(email.file_by_name('binary'), File)
         for file in ['audio.mp3', 'binary', 'image.png', 'text.txt']:
             pass

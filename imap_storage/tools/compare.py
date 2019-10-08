@@ -1,3 +1,6 @@
+"""compare tool"""
+
+
 def list_compare(old, new):
     """ compare """
     remove = [x for x in old if x not in new]

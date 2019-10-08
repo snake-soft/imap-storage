@@ -19,7 +19,7 @@ class ReadmeQuickstartTestcase(TestCase):
         config.imap.port = PORT
 
         account = Account(config, 1)
-        self.assertTrue(account.imap.is_ok)
+        self.assertTrue(account.imap.is_ok())
         directory = account.storage.directory_by_path(account.config.directory)
         email = directory.new_email('Your_first_item')
         email.add_item('TestMessage', text='Your first message')
@@ -29,4 +29,4 @@ class ReadmeQuickstartTestcase(TestCase):
         email.delete()
         self.assertNotIn(email, directory.emails)
         account.close()
-        self.assertFalse(account.imap.is_ok)
+        self.assertFalse(account.imap.is_ok())

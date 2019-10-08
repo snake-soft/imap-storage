@@ -10,9 +10,10 @@ Welcome to imap-storage's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
-==================
-
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
+
+
+.. mdinclude:: ../README.md
+
+
