@@ -3,6 +3,7 @@ This class represents the connection layer
 Many of them are reimplementation of IMAPClient methods
 """
 from builtins import ConnectionResetError
+import ssl
 from imaplib import IMAP4
 from imapclient import IMAPClient, exceptions
 from imap_storage.tools.timer import timer
@@ -19,7 +20,6 @@ class Imap(IMAPClient):
         self.config = config
         self.unsafe = unsafe
         if unsafe:
-            import ssl
             self.ssl_context = ssl.create_default_context()
             self.ssl_context.check_hostname = False
             self.ssl_context.verify_mode = ssl.CERT_NONE
@@ -156,7 +156,7 @@ class Imap(IMAPClient):
         criteria = criteria or ['SUBJECT', self.config.tag]
         # self.connect()
         ret = IMAPClient.search(self, criteria=criteria, charset=charset)
-        return sorted([uid for uid in ret])
+        return sorted(ret)
 
     @timer
     def fetch(self, messages, data, modifiers=None):

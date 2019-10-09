@@ -39,7 +39,7 @@ class Storage:
                 return directory
         return None
 
-    def new_directory(self, path: str) -> Directory:
+    def new_directory(self, path):
         """creates new directory and all subdirectories along the path
         Args:
             path(str): create directory with that path

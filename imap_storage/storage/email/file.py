@@ -37,7 +37,7 @@ def file_from_local(path):
 def file_from_upload(uploaded_file):
     """create File object from Django uploaded file"""
     file = File()
-    #file.email = email_obj
+    # file.email = email_obj
     file.name = uploaded_file.name
     file.data = uploaded_file.read()
     file.mime = uploaded_file.content_type.split(';')[0]
@@ -162,7 +162,10 @@ class File():  # :TODO: # pylint: disable=too-many-instance-attributes
         """
         TODO: if is base64...decode
         """
-        from django.http.response import HttpResponse
+        try:
+            from django.http.response import HttpResponse
+        except ModuleNotFoundError:
+            return False
         response = HttpResponse(self.read())
         response['Content-Type'] = self.mime
         response['Content-Disposition'] = 'attachment;filename="{}"'.format(
