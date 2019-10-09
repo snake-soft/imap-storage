@@ -162,10 +162,8 @@ class File():  # :TODO: # pylint: disable=too-many-instance-attributes
         """
         TODO: if is base64...decode
         """
-        try:
-            from django.http.response import HttpResponse
-        except ModuleNotFoundError:
-            return False
+        from django.http.response import HttpResponse
+        # pylint: disable=E0401
         response = HttpResponse(self.read())
         response['Content-Type'] = self.mime
         response['Content-Disposition'] = 'attachment;filename="{}"'.format(
