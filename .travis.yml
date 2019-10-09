@@ -8,5 +8,8 @@ cache: pip
 install:
   - pip install -r requirements.txt
 script:
+<<<<<<< HEAD
   - pylint imap_storage
+=======
+>>>>>>> branch 'master' of git@github.com:snake-soft/imap-storage.git
   - python -m unittest
