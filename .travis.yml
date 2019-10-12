@@ -1,15 +1,18 @@
 language: python
+
 os:
   - linux
+
 python:
   - "3.5"
   - "3.7"
 cache: pip
+
 install:
   - pip install -r requirements.txt
+
 script:
   - pylint imap_storage
-  - python -m unittest
   - coverage run --source=imap_storage -m unittest
 
 after_success:
