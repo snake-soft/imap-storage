@@ -7,3 +7,4 @@ coverage
 sphinx
 sphinx-rtd-theme
 m2r
+python-coveralls

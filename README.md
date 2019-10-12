@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/snake-soft/imap-storage.svg?branch=master)](https://travis-ci.org/snake-soft/imap-storage)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Documentation Status](https://readthedocs.org/projects/imap-storage/badge/?version=latest)](https://imap-storage.readthedocs.io/en/latest/?badge=latest)
+[![Coverage Status](https://coveralls.io/repos/github/snake-soft/imap-storage/badge.svg?branch=master)](https://coveralls.io/github/snake-soft/imap-storage?branch=master)
 
 Use your Email-account as Storage for data structures and files 
 

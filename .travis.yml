@@ -10,3 +10,7 @@ install:
 script:
   - pylint imap_storage
   - python -m unittest
+  - coverage run --source=imap_storage -m unittest
+
+after_success:
+  - coveralls
